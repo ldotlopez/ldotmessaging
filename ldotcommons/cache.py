@@ -6,7 +6,7 @@ import shutil
 import tempfile
 import time
 
-from zizi.logging import get_logger
+from .logging import get_logger
 
 
 def hashfunc(key):

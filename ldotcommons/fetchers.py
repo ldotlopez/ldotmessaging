@@ -1,8 +1,8 @@
 import urllib.request
 import socket
 
-from zizi.cache import NullCache, DiskCache
-from zizi.utils import prog_cachedir
+from .cache import NullCache, DiskCache
+from .utils import prog_cachedir
 
 
 class FetchError(Exception):
@@ -32,3 +32,4 @@ class UrllibFetcher(BaseFetcher):
             raise FetchError("Unable to fetch {0}: {1}".format(url, e))
 
         self._cache.set(url, buff)
+        return buff
