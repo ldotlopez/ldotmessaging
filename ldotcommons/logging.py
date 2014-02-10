@@ -16,12 +16,15 @@
 #along with this program; if not, write to the Free Software
 #Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
-import logging
 from functools import wraps
+import logging
+
+from .utils import prog_name
 
 
-LOGGING_FORMAT = "[%(levelname)s] %(name)s: %(message)s"
+LOGGING_FORMAT = "[%(levelname)s] [%(name)s] %(message)s"
+
+_loggers = dict()
 
 
 class EncodedStreamHandler(logging.StreamHandler):
@@ -42,11 +45,12 @@ class EncodedStreamHandler(logging.StreamHandler):
             self.handleError(record)
 
 
-_loggers = dict()
-
-
-def get_logger(key='zizi'):
+def get_logger(key=None):
     global _loggers
+
+    if key is None:
+        key = prog_name()
+
     if not key in _loggers:
         _loggers[key] = logging.getLogger(key)
         _loggers[key].setLevel(logging.DEBUG)
