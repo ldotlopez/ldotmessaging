@@ -25,6 +25,7 @@ def create_engine(dbpath='sqlite:///:memory:', echo=False):
     Base.metadata.create_all(engine)
     return engine
 
+
 def create_session(dbpath=None, engine=None, echo=False):
     """
     Dont use directly, write a wrapper over this in your store.py file
