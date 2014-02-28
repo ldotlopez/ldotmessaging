@@ -27,7 +27,9 @@ class UrllibFetcher(BaseFetcher):
             return buff
 
         try:
-            buff = urllib.request.urlopen(url).read()
+            request = urllib.request.Request(url, **opts)
+            fh = urllib.request.urlopen(request)
+            buff = fh.read()
         except (socket.error, urllib.error.HTTPError) as e:
             raise FetchError("Unable to fetch {0}: {1}".format(url, e))
 
