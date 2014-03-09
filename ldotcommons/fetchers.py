@@ -1,5 +1,8 @@
-import urllib.request
+import os.path
+import re
 import socket
+import urllib.request
+
 
 from .cache import NullCache, DiskCache
 from .utils import prog_cachedir
@@ -12,6 +15,28 @@ class FetchError(Exception):
 class BaseFetcher(object):
     def fetch(self, url, **opts):
         raise NotImplemented('Method not implemented')
+
+
+class MockFetcher(BaseFetcher):
+    def __init__(self, basedir):
+        self._basedir = basedir
+
+    def fetch(self, url, **opts):
+        url = re.subn('[^a-z0-9-_\.]', '_', url)[0]
+
+        e = None
+        try:
+            f = os.path.join(self._basedir, url)
+            fh = f.open()
+            buff = fh.read()
+            fh.close()
+
+            return buff
+
+        except IOError as e_:
+            e = e_.args
+
+        raise FetchError(*e)
 
 
 class UrllibFetcher(BaseFetcher):
