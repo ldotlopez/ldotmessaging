@@ -1,4 +1,5 @@
 import datetime
+import importlib
 import os
 import sys
 import time
@@ -66,3 +67,17 @@ def shortify(s, length=50):
 
 def utcnow_timestamp():
     return int(time.mktime(datetime.datetime.utcnow().timetuple()))
+
+
+def get_debugger():
+    debugger = None
+
+    for m in ['ipdb', 'pdb']:
+        try:
+            mod = importlib.import_module(m)
+            return mod
+        except ImportError:
+            pass
+
+    if debugger is None:
+        raise Exception('No debugger available')
