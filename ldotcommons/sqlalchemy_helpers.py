@@ -11,22 +11,22 @@ from ldotcommons import utils
 Base = declarative.declarative_base()
 
 
-def create_engine(dbpath='sqlite:///:memory:', echo=False):
-    engine = sa.create_engine(dbpath, echo=echo)
+def create_engine(dburi='sqlite:///:memory:', echo=False):
+    engine = sa.create_engine(dburi, echo=echo)
     Base.metadata.create_all(engine)
     return engine
 
 
-def create_session(dbpath=None, engine=None, echo=False):
+def create_session(dburi=None, engine=None, echo=False):
     if not engine:
-        engine = create_engine(dbpath, echo)
+        engine = create_engine(dburi, echo)
     Session = orm.sessionmaker(bind=engine)
     return Session()
 
 
 class Filter:
-    def __init__(self, dbpath, mapping):
-        self.engine = create_engine(dbpath='sqlite:///'+dbpath)
+    def __init__(self, dburi, mapping):
+        self.engine = create_engine(dburi=dburi)
         self.sess = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         self.mapping = mapping
         self._ops = {}
