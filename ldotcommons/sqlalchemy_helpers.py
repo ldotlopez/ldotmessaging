@@ -62,10 +62,10 @@ class Filter:
 
         raise Exception('Invalid key: {}'.format(key))
 
-    def by(self, prop, expr, q=None):
-        if '-' in prop:
-            key = '-'.join(prop.split('-')[:-1])
-            mod = prop.split('-')[-1]
+    def _by(self, prop, expr, q=None):
+        if '_' in prop:
+            key = '_'.join(prop.split('_')[:-1])
+            mod = prop.split('_')[-1]
         else:
             key = prop
             mod = None
@@ -77,9 +77,10 @@ class Filter:
 
         raise Exception('Unknow operator {}'.format(prop))
 
-    def composed(self, *expressions, q=None):
-        for (prop, expr) in expressions:
-            q = self.by(prop, expr, q=q)
+    def by(self, **expressions):
+        q = None
+        for (prop, expr) in expressions.items():
+            q = self._by(prop, expr, q=q)
 
         return q
 
