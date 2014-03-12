@@ -1,6 +1,7 @@
 import datetime
 import importlib
 import os
+import re
 import sys
 import time
 import urllib.parse
@@ -81,3 +82,25 @@ def get_debugger():
 
     if debugger is None:
         raise Exception('No debugger available')
+
+
+def parse_size(string):
+    _table = {key: 1000**(idx+1) for (idx, key) in enumerate(['k', 'm', 'g', 't'])}
+
+    string = string.replace(',', '.')
+    m = re.search(r'^([0-9\.]+)([kmgt]b?)?$', string.lower())
+    if not m:
+        raise ValueError()
+
+    value = m.group(1)
+    mod = m.group(2)
+
+    if '.' in value:
+        value = float(value)
+    else:
+        value = int(value)
+
+    if mod in _table:
+        value = value * _table[mod]
+
+    return value
