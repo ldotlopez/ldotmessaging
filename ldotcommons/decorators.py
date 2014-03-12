@@ -1,21 +1,27 @@
 import collections
 import functools
 
+from .utils import get_symbol
+
+
 class ArgCountError(Exception):
     pass
 
+
 class VaArgs(object):
     pass
+
 
 def log_call(f):
     @functools.wraps(f)
     def new_f(*args, **kw):
         method_name = f.__name__
         if isinstance(args[0], object):
-            method_name = str(args[0].__class__.__name__)+ '.' + method_name
+            method_name = str(args[0].__class__.__name__) + '.' + method_name
         print("%s (%s, %s)" % (method_name, repr(args), repr(kw)))
         f(*args, **kw)
     return new_f
+
 
 def accepts(*types):
     """ Function decorator. Checks that inputs given to decorated function
@@ -38,32 +44,32 @@ def accepts(*types):
         def decorator(f):
             def newf(*args):
                 for i in range(0, len(types)):
-                   # Check for vaargs argument
-                   if types[i] == VaArgs:
-                       return f(*args)
-                   try:
-                       arg = args[i]
-                   except IndexError:
-                       raise ArgCountError("Invalid number of arguments: got %d expected %d" % \
-                           (len(args), len(types)))
+                    # Check for vaargs argument
+                    if types[i] == VaArgs:
+                        return f(*args)
+                    try:
+                        arg = args[i]
+                    except IndexError:
+                        raise ArgCountError("Invalid number of arguments: got %d expected %d" %
+                                            (len(args), len(types)))
 
-                   if isinstance(types[i], type):
-                       if issubclass(type(arg), types[i]):
-                           continue
-                       else:
-                           raise TypeError(info(f.__name__, types, tuple(map(type, args)), 0))
-                           #try:
-                           #    types[i](arg)
-                           #    continue
-                           #except ValueError:
-                           #    raise TypeError(info(f.__name__, types, tuple(map(type, args)), 0))
+                    if isinstance(types[i], type):
+                        if issubclass(type(arg), types[i]):
+                            continue
+                        else:
+                            raise TypeError(info(f.__name__, types, tuple(map(type, args)), 0))
+                            #try:
+                            #    types[i](arg)
+                            #    continue
+                            #except ValueError:
+                            #    raise TypeError(info(f.__name__, types, tuple(map(type, args)), 0))
 
-                   elif isinstance(types[i], collections.Callable):
-                       if not types[i](arg):
-                           raise TypeError(info(f.__name__, types, tuple(map(type, args)), 0))
+                    elif isinstance(types[i], collections.Callable):
+                        if not types[i](arg):
+                            raise TypeError(info(f.__name__, types, tuple(map(type, args)), 0))
 
-                   else:
-                       raise TypeError(info(f.__name__, types, tuple(map(type, args)), 0))
+                    else:
+                        raise TypeError(info(f.__name__, types, tuple(map(type, args)), 0))
 
                 return f(*args)
 
@@ -73,3 +79,13 @@ def accepts(*types):
     except TypeError as msg:
         raise TypeError(msg)
 
+
+def symbol_loader(*symbol_params):
+    def decorator(function):
+        def wrapper(*args, **kwargs):
+            for symbol_param in symbol_params:
+                if not callable(kwargs[symbol_param]):
+                    kwargs[symbol_param] = get_symbol(kwargs[symbol_param])
+            function(*args, **kwargs)
+        return wrapper
+    return decorator

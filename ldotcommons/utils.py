@@ -104,3 +104,30 @@ def parse_size(string):
         value = value * _table[mod]
 
     return value
+
+
+def get_symbol(symbol_str):
+    parts = symbol_str.split('.')
+
+    module = '.'.join(parts[:-1])
+    function = parts[-1]
+
+    m = None
+    try:
+        m = importlib.import_module(module)
+    except ImportError:
+        pass
+
+    if not m:
+        raise Exception("Unable to import module '{}' for '{}'".format(module, symbol_str))
+
+    try:
+        return getattr(m, function)
+    except AttributeError:
+        pass
+
+    # Try direct import
+    try:
+        return importlib.import_module(symbol_str)
+    except ImportError:
+        raise Exception("Unable to locate symbol '{}' for '{}'".format(symbol_str, module))
