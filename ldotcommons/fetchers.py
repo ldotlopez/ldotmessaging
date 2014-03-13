@@ -25,8 +25,8 @@ class MockFetcher(BaseFetcher):
         url = re.subn('[^a-z0-9-_\.]', '_', url)[0]
 
         e = None
+        f = os.path.join(self._basedir, url)
         try:
-            f = os.path.join(self._basedir, url)
             fh = f.open()
             buff = fh.read()
             fh.close()
@@ -36,6 +36,7 @@ class MockFetcher(BaseFetcher):
         except IOError as e_:
             e = e_.args
 
+        e = (e[0], e[1], "'{}'".format(f))
         raise FetchError(*e)
 
 
