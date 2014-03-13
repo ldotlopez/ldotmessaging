@@ -8,10 +8,7 @@ import urllib.parse
 
 from xdg.BaseDirectory import xdg_data_home, xdg_config_home, xdg_cache_home
 
-from .decorators import accepts
 
-
-@accepts(str, str)
 def url_strip_query_param(url, key):
     p = urllib.parse.urlparse(url)
     # urllib.parse.urllib.parse.parse_qs may return items in different order that original,

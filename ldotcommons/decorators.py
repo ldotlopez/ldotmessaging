@@ -80,12 +80,18 @@ def accepts(*types):
         raise TypeError(msg)
 
 
-def symbol_loader(*symbol_params):
+def symbol_loader(symbol_param, defaults=None):
     def decorator(function):
+        @functools.wraps(function)
         def wrapper(*args, **kwargs):
-            for symbol_param in symbol_params:
-                if not callable(kwargs[symbol_param]):
-                    kwargs[symbol_param] = get_symbol(kwargs[symbol_param])
+            if not symbol_param in kwargs:
+                kwargs[symbol_param] = defaults
+
+            if not symbol_param in kwargs or not callable(kwargs[symbol_param]):
+                kwargs[symbol_param] = get_symbol(kwargs.get(symbol_param, defaults))
+
             function(*args, **kwargs)
+
         return wrapper
+
     return decorator
