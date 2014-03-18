@@ -1,4 +1,5 @@
 import re
+import warnings
 
 import sqlalchemy as sa
 from sqlalchemy import orm, event
@@ -11,27 +12,40 @@ from ldotcommons import utils
 Base = declarative.declarative_base()
 
 
-def create_engine(dburi='sqlite:///:memory:', echo=False):
-    engine = sa.create_engine(dburi, echo=echo)
+def _re_fn(regexp, other):
+    return re.search(regexp, other, re.IGNORECASE) is not None
+
+
+def create_engine(uri='sqlite:///:memory:', echo=False, dburi=None):
+    if dburi:
+        warnings.warn('Usage of dburi is deprecated, use uri instead')
+        uri = dburi
+
+    engine = sa.create_engine(uri, echo=echo)
     Base.metadata.create_all(engine)
     return engine
 
 
-def create_session(dburi=None, engine=None, echo=False):
+def create_session(uri=None, engine=None, echo=False, dburi=None):
     if not engine:
-        engine = create_engine(dburi, echo)
-    Session = orm.sessionmaker(bind=engine)
-    return Session()
+        engine = create_engine(uri=uri, echo=echo, dburi=dburi)
+
+    session = orm.scoped_session(orm.sessionmaker(bind=engine))
+
+    @event.listens_for(engine, "begin")
+    def do_begin(conn):
+        conn.connection.create_function('regexp', 2, _re_fn)
+
+    return session
 
 
 class Filter:
-    def __init__(self, dburi, mapping):
-        self.engine = create_engine(dburi=dburi)
-        self.sess = orm.scoped_session(orm.sessionmaker(bind=self.engine))
-        self.mapping = mapping
+    def __init__(self, session, mapping):
+        self._sess = session
+        self._mapping = mapping
         self._ops = {}
 
-        columns = self.mapping.__table__.columns
+        columns = self._mapping.__table__.columns
         for (colname, column) in columns.items():
             columntype = column.type
             if isinstance(columntype, sqltypes.String):
@@ -43,20 +57,12 @@ class Filter:
                 self._ops[(colname, 'min')] = self.by_amount_min
                 self._ops[(colname, 'max')] = self.by_amount_max
 
-        @event.listens_for(self.engine, "begin")
-        def do_begin(conn):
-            conn.connection.create_function('regexp', 2, Filter._re_fn)
-
-    @staticmethod
-    def _re_fn(regexp, other):
-        return re.search(regexp, other, re.IGNORECASE) is not None
-
     def _get_base_query(self):
-        return self.sess.query(self.mapping)
+        return self._sess.query(self._mapping)
 
     def _get_torrent_attr(self, key):
         try:
-            return getattr(self.mapping, key, None)
+            return getattr(self._mapping, key, None)
         except AttributeError:
             pass
 
@@ -78,7 +84,7 @@ class Filter:
         raise Exception('Unknow operator {}'.format(prop))
 
     def by(self, **expressions):
-        q = None
+        q = self._get_base_query()
         for (prop, expr) in expressions.items():
             q = self._by(prop, expr, q=q)
 
