@@ -1,3 +1,4 @@
+import argparse
 import configparser
 import datetime
 import importlib
@@ -8,6 +9,25 @@ import time
 import urllib.parse
 
 from xdg.BaseDirectory import xdg_data_home, xdg_config_home, xdg_cache_home
+
+
+class DictAction(argparse.Action):
+    """
+    Convert a series of --foo key=value --foo key2=value2 into a dict like:
+    { key: value, key2: value}
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        dest = getattr(namespace, self.dest)
+        if dest is None:
+            dest = {}
+
+        parts = values.split('=')
+        key = parts[0]
+        value = ''.join(parts[1:])
+
+        dest[key] = value
+
+        setattr(namespace, self.dest, dest)
 
 
 def url_strip_query_param(url, key):
@@ -82,7 +102,7 @@ def ini_dump(d, path):
     cp = configparser.ConfigParser()
 
     for (section, pairs) in d.items():
-        cp[section] = {k: v for (k,v) in pairs.items()}
+        cp[section] = {k: v for (k, v) in pairs.items()}
 
     fh = open(path, 'w+')
     cp.write(fh)

@@ -54,10 +54,8 @@ class DiskCache(object):
         try:
             s = os.stat(on_disk)
         except OSError:
-            self._logger.debug('Cache fail for {0}'.format(key))
             return None
         except IOError:
-            self._logger.debug('Cache fail for {0}'.format(key))
             return None
 
         if self._delta >= 0 and (time.mktime(time.localtime()) - s.st_mtime > self._delta):

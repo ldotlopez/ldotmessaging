@@ -3,9 +3,11 @@ import re
 import socket
 import urllib.request
 
-
+from . import logging
 from .cache import NullCache, DiskCache
 from .utils import prog_cachedir
+
+_logger = logging.get_logger('ldotcommons.fetchers')
 
 
 class FetchError(Exception):
@@ -41,23 +43,29 @@ class MockFetcher(BaseFetcher):
 
 
 class UrllibFetcher(BaseFetcher):
-    def __init__(self, use_cache=False):
+    def __init__(self, headers={}, use_cache=False):
         if use_cache:
-            self._cache = DiskCache(basedir=prog_cachedir('urllibfetcher', create=True))
+            cache_path = prog_cachedir('urllibfetcher', create=True)
+            self._cache = DiskCache(basedir=cache_path)
+            _logger.debug('UrllibFetcher using cache {}'.format(cache_path))
         else:
             self._cache = NullCache()
+
+        self._headers = headers
 
     def fetch(self, url, **opts):
         buff = self._cache.get(url)
         if buff:
+            _logger.debug("found in cache: {}".format(url))
             return buff
 
         try:
-            request = urllib.request.Request(url, **opts)
+            request = urllib.request.Request(url, headers=self._headers, **opts)
             fh = urllib.request.urlopen(request)
             buff = fh.read()
         except (socket.error, urllib.error.HTTPError) as e:
             raise FetchError("Unable to fetch {0}: {1}".format(url, e))
 
+        _logger.debug("stored in cache: {}".format(url))
         self._cache.set(url, buff)
         return buff
