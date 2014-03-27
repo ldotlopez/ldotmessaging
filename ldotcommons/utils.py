@@ -1,3 +1,4 @@
+import configparser
 import datetime
 import importlib
 import os
@@ -65,6 +66,25 @@ def shortify(s, length=50):
 
 def utcnow_timestamp():
     return int(time.mktime(datetime.datetime.utcnow().timetuple()))
+
+
+def ini_load(path):
+    cp = configparser.ConfigParser()
+    if cp.read(path) != [path]:
+        raise IOError("Can't read {}".format(path))
+
+    return {section: {k: v for (k, v) in cp[section].items()} for section in cp.sections()}
+
+
+def ini_dump(d, path):
+    cp = configparser.ConfigParser()
+
+    for (section, pairs) in d.items():
+        cp[section] = {k: v for (k,v) in pairs.items()}
+
+    fh = open(path, 'w+')
+    cp.write(fh)
+    fh.close()
 
 
 def get_debugger():
