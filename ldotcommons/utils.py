@@ -70,8 +70,10 @@ def utcnow_timestamp():
 
 def ini_load(path):
     cp = configparser.ConfigParser()
-    if cp.read(path) != [path]:
-        raise IOError("Can't read {}".format(path))
+
+    fh = open(path, 'r')
+    cp.read_file(fh)
+    fh.close()
 
     return {section: {k: v for (k, v) in cp[section].items()} for section in cp.sections()}
 
