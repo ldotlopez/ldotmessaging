@@ -1,9 +1,9 @@
+import json
 import re
 import warnings
 
 import sqlalchemy as sa
 from sqlalchemy import orm, event
-from sqlalchemy.sql import sqltypes
 from sqlalchemy.ext import declarative
 
 from ldotcommons import utils
@@ -39,36 +39,25 @@ def create_session(uri=None, engine=None, echo=False, dburi=None):
     return session
 
 
-class Filter:
-    def __init__(self, session, mapping):
-        self._sess = session
-        self._mapping = mapping
-        self._ops = {}
+def query_from_params(conn, mapping, **params):
 
-        columns = self._mapping.__table__.columns
-        for (colname, column) in columns.items():
-            columntype = column.type
-            if isinstance(columntype, sqltypes.String):
-                self._ops[(colname, None)] = self.by_string
-                self._ops[(colname, 'like')] = self.by_string_like
-                self._ops[(colname, 'regexp')] = self.by_string_regexp
+    # This code can be used for add type-safety to this function
+    #from sqlalchemy.sql import sqltypes
+    #columns = self._mapping.__table__.columns
+    #for (colname, column) in columns.items():
+    #    columntype = column.type
+    #    if isinstance(columntype, sqltypes.String):
+    #        self._ops[(colname, None)] = self.by_string
+    #        self._ops[(colname, 'like')] = self.by_string_like
+    #        self._ops[(colname, 'regexp')] = self.by_string_regexp
+    #
+    #    if isinstance(columntype, sqltypes.Integer):
+    #        self._ops[(colname, 'min')] = self.by_amount_min
+    #        self._ops[(colname, 'max')] = self.by_amount_max
 
-            if isinstance(columntype, sqltypes.Integer):
-                self._ops[(colname, 'min')] = self.by_amount_min
-                self._ops[(colname, 'max')] = self.by_amount_max
+    q = conn.query(mapping)
 
-    def _get_base_query(self):
-        return self._sess.query(self._mapping)
-
-    def _get_torrent_attr(self, key):
-        try:
-            return getattr(self._mapping, key, None)
-        except AttributeError:
-            pass
-
-        raise Exception('Invalid key: {}'.format(key))
-
-    def _by(self, prop, expr, q=None):
+    for (prop, value) in params.items():
         if '_' in prop:
             key = '_'.join(prop.split('_')[:-1])
             mod = prop.split('_')[-1]
@@ -76,60 +65,39 @@ class Filter:
             key = prop
             mod = None
 
-        try:
-            return self._ops[(key, mod)](key, expr, q=q)
-        except KeyError:
-            pass
+        attr = getattr(mapping, key, None)
 
-        raise Exception('Unknow operator {}'.format(prop))
+        if mod == 'like':
+            q = q.filter(attr.like(value))
 
-    def by(self, **expressions):
-        q = self._get_base_query()
-        for (prop, expr) in expressions.items():
-            q = self._by(prop, expr, q=q)
+        elif mod == 'regexp':
+            q = q.filter(attr.op('regexp')(value))
 
-        return q
+        elif mod == 'min':
+            value = utils.parse_size(value)
+            q = q.filter(attr >= value)
 
-    def by_string(self, key, value, q=None):
-        if q is None:
-            q = self._get_base_query()
+        elif mod == 'max':
+            value = utils.parse_size(value)
+            q = q.filter(attr <= value)
 
-        attr = self._get_torrent_attr(key)
+        else:
+            q = q.filter(attr == value)
 
-        return q.filter(attr == value)
+    return q
 
-    def by_string_like(self, key, value, q=None):
-        if q is None:
-            q = self._get_base_query()
 
-        attr = self._get_torrent_attr(key)
-        value = value.replace('*', '%').replace('.', '_')
+def load_fixtures_file(conn, fixtures_file, loader_func):
+    with open(fixtures_file) as fh:
+        fixtures = json.load(fh)
+        return load_fixtures(conn, fixtures, loader_func)
 
-        return q.filter(attr.like(value))
 
-    def by_string_regexp(self, key, regexp, q=None):
-        if q is None:
-            q = self._get_base_query()
+def load_fixtures(conn, fixtures, loader_func):
+    conn.add_all([loader_func(x) for x in fixtures])
 
-        attr = self._get_torrent_attr(key)
-        return q.filter(attr.op('regexp')(regexp))
 
-    def by_amount_min(self, key, value, q=None):
-        if q is None:
-            q = self._get_base_query()
-
-        attr = self._get_torrent_attr(key)
-        if not isinstance(value, int):
-            amount = utils.parse_size(value)
-
-        return q.filter(attr >= amount)
-
-    def by_amount_max(self, key, value, q=None):
-        if q is None:
-            q = self._get_base_query()
-
-        attr = self._get_torrent_attr(key)
-        if not isinstance(value, int):
-            amount = utils.parse_size(value)
-
-        return q.filter(attr <= amount)
+def glob_to_like(x):
+    for (g, l) in (('*', '%'), ('.', '_')):
+        x = x.replace(g, l)
+    return x
