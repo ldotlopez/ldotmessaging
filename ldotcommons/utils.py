@@ -30,6 +30,56 @@ class DictAction(argparse.Action):
         setattr(namespace, self.dest, dest)
 
 
+class FactoryError(Exception):
+    pass
+
+
+class Factory:
+    def _to_clsname(self, name):
+        return ''.join([x.capitalize() for x in self._to_modname(name).split('_')])
+
+    def _to_modname(self, name):
+        return name.replace('-', '_')
+
+    def __init__(self, ns):
+        self._ns = ns
+        self._mod = importlib.import_module(ns)
+        self._objs = {}
+
+    def __call__(self, name, *args, **kwargs):
+        if not name in self._objs:
+            cls = None
+
+            # Try loading class from internal mod
+            try:
+                cls = self._load_from_ns(name)
+            except AttributeError:
+                pass
+
+            # Try loading from submodule
+            if not cls:
+                try:
+                    cls = self._load_from_submod(name)
+                except (ImportError, AttributeError):
+                    pass
+
+            # Module not found
+            if not cls:
+                raise FactoryError('Unable to load {} from namespace {}'.format(name, self._ns))
+
+            # Create and save obj into cache
+            self._objs[name] = cls(*args, **kwargs)
+
+        return self._objs[name]
+
+    def _load_from_ns(self, name):
+        return getattr(self._mod, self._to_clsname(name))
+
+    def _load_from_submod(self, name):
+        m = importlib.import_module("{}.{}".format(self._ns, self._to_modname(name)))
+        return getattr(m, self._to_clsname(name))
+
+
 def url_strip_query_param(url, key):
     p = urllib.parse.urlparse(url)
     # urllib.parse.urllib.parse.parse_qs may return items in different order that original,

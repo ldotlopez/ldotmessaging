@@ -19,7 +19,7 @@
 from functools import wraps
 import logging
 
-from .utils import prog_name
+from ldotcommons.utils import prog_name
 
 
 LOGGING_FORMAT = "[%(levelname)s] [%(name)s] %(message)s"
@@ -28,8 +28,7 @@ _loggers = dict()
 
 
 class EncodedStreamHandler(logging.StreamHandler):
-
-    def __init__(self, *args, encoding='utf-8', **kwargs):
+    def __init__(self, encoding='utf-8', *args, **kwargs):
         super(EncodedStreamHandler, self).__init__(*args, **kwargs)
         self.encoding = encoding
         self.terminator = self.terminator.encode(self.encoding)
