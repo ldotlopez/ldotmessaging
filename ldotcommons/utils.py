@@ -12,10 +12,12 @@ from xdg.BaseDirectory import xdg_data_home, xdg_config_home, xdg_cache_home
 
 
 class DictAction(argparse.Action):
+
     """
     Convert a series of --foo key=value --foo key2=value2 into a dict like:
     { key: value, key2: value}
     """
+
     def __call__(self, parser, namespace, values, option_string=None):
         dest = getattr(namespace, self.dest)
         if dest is None:
@@ -31,10 +33,12 @@ class DictAction(argparse.Action):
 
 
 class MultiDepthDict(dict):
+
     def subdict(self, prefix, strip_prefix=True, separator='.', merge_parent=False):
         full_prefix = prefix + separator
 
-        return {k[len(full_prefix):] if strip_prefix else k: v for (k, v) in self.items() if k.startswith(full_prefix)}
+        return {k[len(full_prefix):] if strip_prefix else k: v \
+            for (k, v) in self.items() if k.startswith(full_prefix)}
 
 
 class FactoryError(Exception):
@@ -42,6 +46,7 @@ class FactoryError(Exception):
 
 
 class Factory:
+
     def _to_clsname(self, name):
         return ''.join([x.capitalize() for x in self._to_modname(name).split('_')])
 
@@ -72,7 +77,8 @@ class Factory:
 
             # Module not found
             if not cls:
-                raise FactoryError('Unable to load {} from namespace {}'.format(name, self._ns))
+                raise FactoryError(
+                    'Unable to load {} from namespace {}'.format(name, self._ns))
 
             # Create and save obj into cache
             self._objs[name] = cls(*args, **kwargs)
@@ -83,7 +89,8 @@ class Factory:
         return getattr(self._mod, self._to_clsname(name))
 
     def _load_from_submod(self, name):
-        m = importlib.import_module("{}.{}".format(self._ns, self._to_modname(name)))
+        m = importlib.import_module(
+            "{}.{}".format(self._ns, self._to_modname(name)))
         return getattr(m, self._to_clsname(name))
 
 
@@ -91,8 +98,8 @@ def url_strip_query_param(url, key):
     p = urllib.parse.urlparse(url)
     # urllib.parse.urllib.parse.parse_qs may return items in different order that original,
     # so we avoid use it
-    # qs = '&'.join([ "{0}={1}".format(k, v[-1]) for (k,v) in urllib.parse.urllib.parse.parse_qs(p.query).items() if k != key ])
-    qs = '&'.join([x for x in p.query.split('&') if not x.startswith(key+'=')])
+    qs = '&'.join(
+        [x for x in p.query.split('&') if not x.startswith(key + '=')])
 
     return urllib.parse.ParseResult(p.scheme, p.netloc, p.path, p.params, qs, p.fragment).geturl()
 
@@ -138,7 +145,7 @@ def shortify(s, length=50):
     """
     Returns a shortified version of s
     """
-    return "…" + s[-(length-1):] if len(s) > length else s
+    return "…" + s[-(length - 1):] if len(s) > length else s
 
 
 def utcnow_timestamp():
@@ -181,7 +188,8 @@ def get_debugger():
 
 
 def parse_size(string):
-    _table = {key: 1000**(idx+1) for (idx, key) in enumerate(['k', 'm', 'g', 't'])}
+    _table = {key: 1000 ** (idx + 1)
+              for (idx, key) in enumerate(['k', 'm', 'g', 't'])}
 
     string = string.replace(',', '.')
     m = re.search(r'^([0-9\.]+)([kmgt]b?)?$', string.lower())
@@ -215,7 +223,8 @@ def get_symbol(symbol_str):
         pass
 
     if not m:
-        raise Exception("Unable to import module '{}' for '{}'".format(module, symbol_str))
+        raise Exception(
+            "Unable to import module '{}' for '{}'".format(module, symbol_str))
 
     try:
         return getattr(m, function)
@@ -226,4 +235,5 @@ def get_symbol(symbol_str):
     try:
         return importlib.import_module(symbol_str)
     except ImportError:
-        raise Exception("Unable to locate symbol '{}' for '{}'".format(symbol_str, module))
+        raise Exception(
+            "Unable to locate symbol '{}' for '{}'".format(symbol_str, module))
