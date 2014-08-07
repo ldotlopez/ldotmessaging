@@ -16,15 +16,16 @@
 #along with this program; if not, write to the Free Software
 #Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from functools import wraps
+import functools
 import logging
 
-from ldotcommons.utils import prog_name
+from ldotcommons import utils
 
 
 LOGGING_FORMAT = "[%(levelname)s] [%(name)s] %(message)s"
 
 _loggers = dict()
+_log_level = logging.DEBUG
 
 
 class EncodedStreamHandler(logging.StreamHandler):
@@ -44,19 +45,30 @@ class EncodedStreamHandler(logging.StreamHandler):
             self.handleError(record)
 
 
+def set_level(level):
+    global _loggers
+    global _log_level
+
+    _log_level = level
+    for (name, logger) in _loggers.items():
+        logger.setLevel(level)
+
+
 def get_logger(key=None):
     global _loggers
+    global _log_level
 
     if key is None:
-        key = prog_name()
+        key = utils.prog_name()
 
     if not key in _loggers:
         _loggers[key] = logging.getLogger(key)
-        _loggers[key].setLevel(logging.DEBUG)
+        _loggers[key].setLevel(_log_level)
 
         handler = EncodedStreamHandler()
         handler.setFormatter(logging.Formatter(LOGGING_FORMAT))
         _loggers[key].addHandler(handler)
+
     return _loggers[key]
 
 
@@ -65,7 +77,7 @@ def log_on_success(msg='done', level=20):
     logs `msg` with `level` at the end of the method call
     """
     def decorator(fn):
-        @wraps(fn)
+        @functools.wraps(fn)
         def wrapped_fn(self, *args, **kwargs):
             logger = getattr(self, 'logger')
             ret = fn(self, *args, **kwargs)
