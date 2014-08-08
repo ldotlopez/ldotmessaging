@@ -6,7 +6,7 @@ import shutil
 import tempfile
 import time
 
-from .logging import get_logger
+from ldotcommons import logging
 
 
 def hashfunc(key):
@@ -25,7 +25,7 @@ class NullCache(object):
 
 
 class DiskCache(object):
-    def __init__(self, basedir=None, delta=-1, hashfunc=hashfunc, logger=get_logger('zizi.cache.DiskCache')):
+    def __init__(self, basedir=None, delta=-1, hashfunc=hashfunc, logger=logging.get_logger('zizi.cache.DiskCache')):
         self._is_tmp = False
         self._basedir = basedir
         self._delta = delta
@@ -64,11 +64,12 @@ class DiskCache(object):
             return None
 
         try:
+            self._logger.debug('Using cache: {}'.format(on_disk))
             with open(on_disk) as fh:
                 buff = fh.read()
                 fh.close()
                 return buff
-        except IOError:
+        except Exception:
             self._logger.debug('Failed access to key {0}'.format(key))
             try:
                 os.unlink(on_disk)

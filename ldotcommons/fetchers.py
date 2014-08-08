@@ -1,7 +1,9 @@
-import os.path
+import gzip
+import io
+from os import path
 import re
 import socket
-import urllib.request
+from urllib import request, error as urllib_error
 
 from . import logging
 from .cache import NullCache, DiskCache
@@ -27,7 +29,7 @@ class MockFetcher(BaseFetcher):
         url = re.subn('[^a-z0-9-_\.]', '_', url)[0]
 
         e = None
-        f = os.path.join(self._basedir, url)
+        f = path.join(self._basedir, url)
         try:
             fh = f.open()
             buff = fh.read()
@@ -60,10 +62,15 @@ class UrllibFetcher(BaseFetcher):
             return buff
 
         try:
-            request = urllib.request.Request(url, headers=self._headers, **opts)
-            fh = urllib.request.urlopen(request)
-            buff = fh.read()
-        except (socket.error, urllib.error.HTTPError) as e:
+            req = request.Request(url, headers=self._headers, **opts)
+            resp = request.urlopen(req)
+            if resp.getheader('Content-Encoding') == 'gzip':
+                bi = io.BytesIO(resp.read())
+                gf = gzip.GzipFile(fileobj=bi, mode="rb")
+                buff = gf.read()
+            else:
+                buff = fh.read()
+        except (socket.error, urllib_error.HTTPError) as e:
             raise FetchError("Unable to fetch {0}: {1}".format(url, e))
 
         _logger.debug("stored in cache: {}".format(url))
