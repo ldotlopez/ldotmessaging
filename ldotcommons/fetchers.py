@@ -69,7 +69,7 @@ class UrllibFetcher(BaseFetcher):
                 gf = gzip.GzipFile(fileobj=bi, mode="rb")
                 buff = gf.read()
             else:
-                buff = fh.read()
+                buff = resp.read()
         except (socket.error, urllib_error.HTTPError) as e:
             raise FetchError("Unable to fetch {0}: {1}".format(url, e))
 
