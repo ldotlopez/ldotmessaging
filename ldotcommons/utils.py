@@ -37,8 +37,8 @@ class MultiDepthDict(dict):
     def subdict(self, prefix, strip_prefix=True, separator='.', merge_parent=False):
         full_prefix = prefix + separator
 
-        return {k[len(full_prefix):] if strip_prefix else k: v \
-            for (k, v) in self.items() if k.startswith(full_prefix)}
+        return {k[len(full_prefix):] if strip_prefix else k: v
+                for (k, v) in self.items() if k.startswith(full_prefix)}
 
 
 class FactoryError(Exception):

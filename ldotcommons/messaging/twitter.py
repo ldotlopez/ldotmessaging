@@ -1,7 +1,6 @@
 import json
 
 import twitter as twapi
-
 from ldotcommons import logging
 from ldotcommons import messaging
 
@@ -22,7 +21,7 @@ class Twitter(twapi.Twitter, messaging.Notifier):
         except twapi.TwitterHTTPError as e:
             response = json.loads(e.response_data.decode('utf-8'))
             for error in response['errors']:
-                _logger.warning('Error {}: {}'.format(error['code'], error['message']))
+                _logger.error('Error {}: {}'.format(error['code'], error['message']))
 
 
 if __name__ == '__main__':
