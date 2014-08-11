@@ -9,14 +9,14 @@ class Notifier:
         raise NotImplementedError()
 
 
-def enable(notifier, *args, **kwargs):
-    if notifier in _notifiers:
+def enable(name, backend, *args, **kwargs):
+    if name in _notifiers:
         return
-    _notifiers[notifier] = _factory(notifier, *args, **kwargs)
+    _notifiers[name] = _factory(backend, *args, **kwargs)
 
 
-def disable(notifier):
-    del _notifiers[notifier]
+def disable(name):
+    del _notifiers[name]
 
 
 def send(msg, detail=''):
