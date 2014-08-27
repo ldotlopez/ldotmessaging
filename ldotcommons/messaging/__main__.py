@@ -5,6 +5,9 @@ if __name__ == '__main__':
     import importlib
     import sys
 
+    #
+    # Parse global options
+    #
     parser = argparse.ArgumentParser(description='Messaging microframework.')
     parser.add_argument(
         '-b',
@@ -27,11 +30,13 @@ if __name__ == '__main__':
         default='send',
         help='Send section')
 
-    init_opts, send_opts = {}, {}
 
     (opts, other) = parser.parse_known_args(sys.argv[1:])
+    init_opts, send_opts = {}, {}
 
-    # Parse config file
+    #
+    # Load options from configfile if needed
+    #
     if opts.config_file:
         cp = configparser.ConfigParser()
         cp.read(opts.config_file)
@@ -50,7 +55,10 @@ if __name__ == '__main__':
         except KeyError:
             pass
 
-    # Parse cmdl_opts
+    #
+    # Build a second argument parser to get backend options (init/send)
+    # from remaining arguments
+    #
     parser = argparse.ArgumentParser()
     for arg in other:
         if not arg.startswith('--'):
@@ -63,6 +71,9 @@ if __name__ == '__main__':
 
     parser.add_argument('message', nargs='+')
 
+    #
+    # Finalize argument parsing with the 'backend' argparser
+    #
     cmdl_opts = parser.parse_args(other)
 
     for (name, value) in vars(cmdl_opts).items():
@@ -71,6 +82,11 @@ if __name__ == '__main__':
         else:
             send_opts[name] = value
 
+    message = ' '.join(cmdl_opts.message)
+
+    #
+    # Do nasty things to load backend and call init/send without errors
+    #
     backend_mod = importlib.import_module('ldotcommons.messaging.'+opts.backend)
     backend_cls_name = ''.join([x.capitalize() for x in opts.backend.split('_')])
     backend_cls = getattr(backend_mod, backend_cls_name)
@@ -80,7 +96,5 @@ if __name__ == '__main__':
 
     sig = inspect.signature(backend_cls.send)
     send_opts = {k: v for (k, v) in send_opts.items() if sig.parameters.get(k)}
-
-    message = ' '.join(cmdl_opts.message)
 
     backend_cls(**init_opts).send(message, **send_opts)
