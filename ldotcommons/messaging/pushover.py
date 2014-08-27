@@ -44,27 +44,3 @@ class Pushover(messaging.Notifier):
             raise PushoverException('Unable to send message', response=r)
 
         _logger.debug('Message {} send.'.format(r['request']))
-
-
-def execute(*args):
-    init_args = {}
-
-    arg = args.pop()
-    while True:
-        if arg.startswith('--'):
-            (k, v) = arg[2:].split('=', 1)
-            k = k.replace('-', '_')
-            init_args[k] = v
-        else:
-            break
-
-        if not args:
-            break
-
-        args = args.pop()
-
-    
-
-if __name__ == '__main__':
-    import sys
-    Pushover(sys.argv[1], sys.argv[2]).send(' '.join(sys.argv[3:]))

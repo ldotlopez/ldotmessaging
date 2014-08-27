@@ -22,8 +22,3 @@ class Twitter(twapi.Twitter, messaging.Notifier):
             response = json.loads(e.response_data.decode('utf-8'))
             for error in response['errors']:
                 _logger.error('Error {}: {}'.format(error['code'], error['message']))
-
-
-if __name__ == '__main__':
-    import sys
-    Twitter(sys.argv[1:5]).send(' '.join(sys.argv[5:]))

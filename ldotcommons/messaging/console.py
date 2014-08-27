@@ -13,13 +13,3 @@ class Console(messaging.Notifier):
         for line in detail.split('\n'):
             for chunk in [line[i:i+self._line_len] for i in range(0, len(line), self._line_len)]:
                 self._logger.info('  {}'.format(chunk))
-
-
-if __name__ == '__main__':
-    import sys
-    if len(sys.argv) < 2:
-        print("Usage: {} arg1 [args …]".format(sys.argv[0]))
-        sys.exit(0)
-
-    m = Console()
-    m.send(sys.argv[1], '\n'.join(sys.argv[2:]))
