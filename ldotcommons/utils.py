@@ -41,6 +41,104 @@ class MultiDepthDict(dict):
                 for (k, v) in self.items() if k.startswith(full_prefix)}
 
 
+class ReadOnlyAttribute(Exception):
+    pass
+
+
+# class AttribDict(dict):
+#     RO = []
+#     GETTERS = []
+#     SETTERS = []
+
+#     def _setter(self, attr, value):
+#         try:
+#             return self.__setitem__(attr, value)
+#         except KeyError:
+#             raise AttributeError(attr)
+
+#     def _getter(self, attr):
+#         try:
+#             return self.__getitem__(attr)
+#         except KeyError:
+#             raise AttributeError(attr)
+
+#     def __getattr__(self, attr):
+#         if attr in self.__class__.GETTERS:
+#             return getattr(self, 'get_' + attr)()
+
+#         try:
+#             return super(AttribDict, self).__getitem__(attr)
+#         except KeyError:
+#             raise AttributeError(attr)
+
+#     def __setattr__(self, attr, value):
+#         if attr in self.__class__.RO:
+#             raise ReadOnlyAttribute()
+
+#         if attr in self.__class__.SETTERS:
+#             import ipdb; ipdb.set_trace()
+#             return getattr(self, 'set_' + attr)(value)()
+
+#         try:
+#             return super(AttribDict, self).__setitem__(attr, value)
+#         except KeyError:
+#             raise AttributeError(attr)
+
+#     def __setitem__(self, key, value):
+#         try:
+#             return self.__setattr__(key, value)
+#         except AttributeError:
+#             pass
+
+#         raise KeyError(key)
+
+#     def __getitem__(self, key):
+#         try:
+#             return self.__getattr__(key)
+#         except AttributeError:
+#             pass
+
+#         raise KeyError(key)
+
+class AttribDict(dict):
+    RO = []
+    GETTERS = []
+    SETTERS = []
+
+    def _setter(self, attr, value):
+        try:
+            return self.__setitem__(attr, value)
+        except KeyError:
+            raise AttributeError(attr)
+
+    def _getter(self, attr):
+        try:
+            return self.__getitem__(attr)
+        except KeyError:
+            raise AttributeError(attr)
+
+    def __getattr__(self, attr):
+        if attr in self.__class__.GETTERS:
+            return getattr(self, 'get_' + attr)()
+
+        try:
+            return super(AttribDict, self).__getitem__(attr)
+        except KeyError:
+            raise AttributeError(attr)
+
+    def __setattr__(self, attr, value):
+        if attr in self.__class__.RO:
+            raise ReadOnlyAttribute()
+
+        if attr in self.__class__.SETTERS:
+            return getattr(self, 'set_' + attr)(value)
+
+        try:
+            return super(AttribDict, self).__setitem__(attr, value)
+        except KeyError:
+            raise AttributeError(attr)
+
+
 class FactoryError(Exception):
     pass
 
@@ -48,7 +146,9 @@ class FactoryError(Exception):
 class Factory:
 
     def _to_clsname(self, name):
-        return ''.join([x.capitalize() for x in self._to_modname(name).split('_')])
+        return ''.join([
+            x.capitalize() for x in self._to_modname(name).split('_')
+        ])
 
     def _to_modname(self, name):
         return name.replace('-', '_')
@@ -59,7 +159,7 @@ class Factory:
         self._objs = {}
 
     def __call__(self, name, *args, **kwargs):
-        if not name in self._objs:
+        if name not in self._objs:
             cls = None
 
             # Try loading class from internal mod
@@ -78,7 +178,9 @@ class Factory:
             # Module not found
             if not cls:
                 raise FactoryError(
-                    'Unable to load {} from namespace {}'.format(name, self._ns))
+                    'Unable to load {} from namespace {}'.format(
+                        name, self._ns)
+                    )
 
             # Create and save obj into cache
             self._objs[name] = cls(*args, **kwargs)
@@ -96,12 +198,18 @@ class Factory:
 
 def url_strip_query_param(url, key):
     p = urllib.parse.urlparse(url)
-    # urllib.parse.urllib.parse.parse_qs may return items in different order that original,
-    # so we avoid use it
+    # urllib.parse.urllib.parse.parse_qs may return items in different order
+    # that original, so we avoid use it
     qs = '&'.join(
         [x for x in p.query.split('&') if not x.startswith(key + '=')])
 
-    return urllib.parse.ParseResult(p.scheme, p.netloc, p.path, p.params, qs, p.fragment).geturl()
+    return urllib.parse.ParseResult(
+        p.scheme,
+        p.netloc,
+        p.path,
+        p.params,
+        qs,
+        p.fragment).geturl()
 
 
 def url_get_query_param(url, key, default=None):
