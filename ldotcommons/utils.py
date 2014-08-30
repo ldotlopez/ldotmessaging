@@ -41,6 +41,14 @@ class MultiDepthDict(dict):
                 for (k, v) in self.items() if k.startswith(full_prefix)}
 
 
+class SingletonMetaclass(type):
+    def __call__(cls, *args, **kwargs):
+        instance = getattr(cls, '_instance', None)
+        if not instance:
+            setattr(cls, '_instance', super(SingletonMetaclass, cls).__call__(*args, **kwargs))
+        return cls._instance
+
+
 class ReadOnlyAttribute(Exception):
     pass
 
@@ -293,6 +301,10 @@ def get_debugger():
 
     if debugger is None:
         raise Exception('No debugger available')
+
+
+def breakpoint():
+    get_debugger().set_trace()
 
 
 def parse_size(string):
