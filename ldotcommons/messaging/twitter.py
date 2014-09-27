@@ -8,7 +8,9 @@ _logger = logging.get_logger(__name__)
 
 
 class Twitter(twapi.Twitter, messaging.Notifier):
-    def __init__(self, consumer_key='', consumer_secret='', token='', token_secret=''):
+    def __init__(self,
+                 consumer_key='', consumer_secret='',
+                 token='', token_secret=''):
         super(Twitter, self).__init__(auth=twapi.OAuth(
             consumer_key=consumer_key,
             consumer_secret=consumer_secret,
@@ -21,4 +23,5 @@ class Twitter(twapi.Twitter, messaging.Notifier):
         except twapi.TwitterHTTPError as e:
             response = json.loads(e.response_data.decode('utf-8'))
             for error in response['errors']:
-                _logger.error('Error {}: {}'.format(error['code'], error['message']))
+                msg = 'Error {}: {}'.format(error['code'], error['message'])
+                _logger.error(msg)

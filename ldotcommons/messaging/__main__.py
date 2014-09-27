@@ -30,7 +30,6 @@ if __name__ == '__main__':
         default='send',
         help='Send section')
 
-
     (opts, other) = parser.parse_known_args(sys.argv[1:])
     init_opts, send_opts = {}, {}
 
@@ -87,8 +86,10 @@ if __name__ == '__main__':
     #
     # Do nasty things to load backend and call init/send without errors
     #
-    backend_mod = importlib.import_module('ldotcommons.messaging.'+opts.backend)
-    backend_cls_name = ''.join([x.capitalize() for x in opts.backend.split('_')])
+    backend_mod = importlib.import_module(
+        'ldotcommons.messaging.'+opts.backend)
+    backend_cls_name = ''.join(
+        [x.capitalize() for x in opts.backend.split('_')])
     backend_cls = getattr(backend_mod, backend_cls_name)
 
     sig = inspect.signature(backend_cls)

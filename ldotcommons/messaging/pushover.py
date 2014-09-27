@@ -8,6 +8,7 @@ _logger = logging.get_logger(__name__)
 
 _ENDPOINT = 'https://api.pushover.net/1/messages.json'
 
+
 class PushoverException(Exception):
     def __init__(self, *args, **kwargs):
         self.response = kwargs.pop('response')
@@ -35,7 +36,8 @@ class Pushover(messaging.Notifier):
         data = parse.urlencode(data).encode('utf-8')
 
         req = request.Request(_ENDPOINT)
-        req.add_header("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
+        req.add_header(
+            "Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
 
         resp = request.urlopen(req, data)
         r = json.loads(resp.read().decode('utf-8'))
