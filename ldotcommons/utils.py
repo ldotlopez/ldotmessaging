@@ -204,6 +204,66 @@ class Factory:
         return getattr(m, self._to_clsname(name))
 
 
+class ModuleFactory:
+    def __init__(self, ns):
+        self._ns = ns
+        self._ns_sym = importlib.import_module(ns)
+        self._m = {}
+
+    def __call__(self, name):
+        if name not in self._m:
+            if name in self._ns_sym:
+                self._m[name] = getattr(self._ns_sym, name)
+
+            else:
+                try:
+                    self._m[name] = importlib.import_module(
+                        "{}.{}".format(self._ns, name))
+                except ImportError:
+                    pass
+
+        return self._m[name]
+
+
+class ObjectFactory:
+    def __init__(self, ns, in_sub_module=True):
+        self._ns = ns
+        self._ns_sym = importlib.import_module(ns)
+        self._m = {}
+        self._in_sub_module = in_sub_module
+
+    def __call__(self, name, *args, **kwargs):
+        if name not in self._m:
+            cls_name = ''.join([x.capitalize() for x in name.split('_')])
+
+            if not self._in_sub_module:
+                self._m[name] = getattr(self._ns_sym, cls_name)
+
+            else:
+                tmp = re.sub(r'([A-Z])', r'_\1', cls_name[1:])
+                tmp = cls_name[0] + tmp
+
+                sub_mod = None
+                sub_mod_exceptions = {}
+
+                for mod_candidate in [cls_name.lower(), tmp.lower()]:
+                    try:
+                        sub_mod = importlib.import_module("{}.{}".format(
+                            self._ns, mod_candidate))
+                        break
+
+                    except ImportError as e:
+                        sub_mod_exceptions[mod_candidate] = e
+                        pass
+
+                if not sub_mod:
+                    raise IndexError(sub_mod_exceptions)
+
+            self._m[name] = getattr(sub_mod, cls_name)
+
+        return self._m[name](*args, **kwargs)
+
+
 def url_strip_query_param(url, key):
     p = urllib.parse.urlparse(url)
     # urllib.parse.urllib.parse.parse_qs may return items in different order

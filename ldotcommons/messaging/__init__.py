@@ -9,6 +9,11 @@ class Notifier:
         raise NotImplementedError()
 
 
+class Source:
+    def recv(self):
+        raise NotImplementedError()
+
+
 def enable(name, backend, *args, **kwargs):
     if name in _notifiers:
         return
