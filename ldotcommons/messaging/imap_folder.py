@@ -144,12 +144,24 @@ class ImapFolder:
                 print("Unable to decode")
                 continue
 
-        for message in messages:
-            for m in message.walk():
-                print("multipart: {}, payload: {}".format(
-                    m.is_multipart(), type(m.get_payload())))
-                import ipdb; ipdb.set_trace()
-                pass
+        if flatten:
+
+            # Copy headers from parent message to its children
+            for message in messages:
+                for m in message.walk():
+                    message_keys = set(message.keys())
+                    m_keys = set(m.keys())
+                    for k in message_keys - m_keys:
+                        m[k] = message[k]
+
+            # Flat list
+            messages = [m for m in chain.from_iterable(
+                [m.walk() for m in messages]) if not m.is_multipart()]
+
+        # for message in messages:
+        #     for m in message.walk():
+        #         print("multipart: {}, payload: {}".format(
+        #             m.is_multipart(), type(m.get_payload())))
 
         return messages
 
