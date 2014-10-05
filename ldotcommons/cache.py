@@ -25,7 +25,8 @@ class NullCache(object):
 
 
 class DiskCache(object):
-    def __init__(self, basedir=None, delta=-1, hashfunc=hashfunc, logger=logging.get_logger('zizi.cache.DiskCache')):
+    def __init__(self, basedir=None, delta=-1, hashfunc=hashfunc,
+                 logger=logging.get_logger('zizi.cache.DiskCache')):
         self._is_tmp = False
         self._basedir = basedir
         self._delta = delta
@@ -37,7 +38,8 @@ class DiskCache(object):
 
     def _on_disk_path(self, key):
         hashed = hashfunc(key)
-        return os.path.join(self._basedir, hashed[:0], hashed[:1], hashed[:2], hashed)
+        return os.path.join(
+            self._basedir, hashed[:0], hashed[:1], hashed[:2], hashed)
 
     def set(self, key, value):
         p = self._on_disk_path(key)
@@ -58,7 +60,8 @@ class DiskCache(object):
         except IOError:
             return None
 
-        if self._delta >= 0 and (time.mktime(time.localtime()) - s.st_mtime > self._delta):
+        if self._delta >= 0 and \
+           (time.mktime(time.localtime()) - s.st_mtime > self._delta):
             self._logger.debug('Key {0} is outdated'.format(key))
             os.unlink(on_disk)
             return None

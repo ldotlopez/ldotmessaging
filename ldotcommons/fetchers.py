@@ -45,7 +45,7 @@ class MockFetcher(BaseFetcher):
 
 
 class UrllibFetcher(BaseFetcher):
-    def __init__(self, headers={}, cache=False, cache_delta=1):
+    def __init__(self, headers={}, cache=False, cache_delta=-1):
         if cache:
             cache_path = prog_cachedir('urllibfetcher', create=True)
             self._cache = DiskCache(basedir=cache_path, delta=cache_delta)
