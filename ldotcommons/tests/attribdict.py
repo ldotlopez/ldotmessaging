@@ -8,15 +8,15 @@ class AttribDictWithRO(utils.AttribDict):
     RO = ['foo']
 
 
-class AttibDictWithAccessors(utils.AttribDict):
+class AttribDictWithAccessors(utils.AttribDict):
     SETTERS = ['foo']
     GETTERS = ['bar']
 
     def set_foo(self, value):
-        return self._setter('foo', value + 1)
+        self['foo'] = value + 1
 
     def get_bar(self):
-        return self._getter('bar') - 1
+        return self['bar'] - 1
 
 
 class TestAttribDict(unittest.TestCase):
@@ -54,7 +54,7 @@ class TestAttribDict(unittest.TestCase):
             ad.foo = 4
 
     def test_accessors(self):
-        ad = AttibDictWithAccessors()
+        ad = AttribDictWithAccessors()
         ad.foo = 1
         ad.bar = 1
         self.assertEqual(ad.foo, 2)

@@ -21,4 +21,9 @@ class Twitter(twapi.Twitter, messaging.Notifier):
         except twapi.TwitterHTTPError as e:
             response = json.loads(e.response_data.decode('utf-8'))
             for error in response['errors']:
-                _logger.error('Error {}: {}'.format(error['code'], error['message']))
+                _logger.error('Error {code}: {message}'.format(
+                    code=error['code'],
+                    message=error['message']))
+
+    def recv(self, user_name=None, since=None):
+        pass

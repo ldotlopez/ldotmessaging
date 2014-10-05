@@ -15,6 +15,10 @@ Base = declarative.declarative_base()
 def _re_fn(regexp, other):
     return re.search(regexp, other, re.IGNORECASE) is not None
 
+#@property
+#def __monkeypatch_Base_query(self):
+#    return self.session.query(self)
+
 
 def create_engine(uri='sqlite:///:memory:', echo=False, dburi=None):
     if dburi:
@@ -23,6 +27,12 @@ def create_engine(uri='sqlite:///:memory:', echo=False, dburi=None):
 
     engine = sa.create_engine(uri, echo=echo)
     Base.metadata.create_all(engine)
+
+    # Monkeypatch magic
+    # setattr(Base, 'engine', engine)
+    # setattr(Base, 'session', create_session(engine=engine))
+    # setattr(Base.__class__, 'query', __monkeypatch_Base_query)
+
     return engine
 
 
@@ -46,7 +56,7 @@ def query_from_params(conn, mapping, **params):
     #columns = self._mapping.__table__.columns
     #for (colname, column) in columns.items():
     #    columntype = column.type
-    #    if isinstance(columntype, sqltypes.String):
+    ##     if isinstance(columntype, sqltypes.String):
     #        self._ops[(colname, None)] = self.by_string
     #        self._ops[(colname, 'like')] = self.by_string_like
     #        self._ops[(colname, 'regexp')] = self.by_string_regexp
