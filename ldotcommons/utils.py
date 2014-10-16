@@ -212,7 +212,7 @@ class ModuleFactory:
 
     def __call__(self, name):
         if name not in self._m:
-            if name in self._ns_sym:
+            if hasattr(self._ns_sym, name):
                 self._m[name] = getattr(self._ns_sym, name)
 
             else:
