@@ -328,14 +328,16 @@ def utcnow_timestamp():
     return int(time.mktime(datetime.datetime.utcnow().timetuple()))
 
 
+def configparser_to_dict(cp):
+    return {section: {k: v for (k, v) in cp[section].items()} for section in cp.sections()}
+
+
 def ini_load(path):
     cp = configparser.ConfigParser()
+    with open(path, 'r') as fh:
+        cp.read_file(fh)
 
-    fh = open(path, 'r')
-    cp.read_file(fh)
-    fh.close()
-
-    return {section: {k: v for (k, v) in cp[section].items()} for section in cp.sections()}
+    return configparser_to_dict(cp)
 
 
 def ini_dump(d, path):
