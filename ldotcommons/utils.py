@@ -8,7 +8,7 @@ import sys
 import time
 import urllib.parse
 
-from xdg.BaseDirectory import xdg_data_home, xdg_config_home, xdg_cache_home
+import appdirs
 
 
 class DictAction(argparse.Action):
@@ -34,7 +34,8 @@ class DictAction(argparse.Action):
 
 class MultiDepthDict(dict):
 
-    def subdict(self, prefix, strip_prefix=True, separator='.', merge_parent=False):
+    def subdict(self,
+                prefix, strip_prefix=True, separator='.', merge_parent=False):
         full_prefix = prefix + separator
 
         return {k[len(full_prefix):] if strip_prefix else k: v
@@ -45,7 +46,9 @@ class SingletonMetaclass(type):
     def __call__(cls, *args, **kwargs):
         instance = getattr(cls, '_instance', None)
         if not instance:
-            setattr(cls, '_instance', super(SingletonMetaclass, cls).__call__(*args, **kwargs))
+            setattr(cls,
+                    '_instance',
+                    super(SingletonMetaclass, cls).__call__(*args, **kwargs))
         return cls._instance
 
 
@@ -288,33 +291,52 @@ def url_get_query_param(url, key, default=None):
         return default
 
 
-def prog_name(prog=os.path.basename(sys.argv[0])):
-    return os.path.splitext(prog)[0]
+def prog_name(prog=sys.argv[0]):
+    prog = os.path.basename(prog)
+    prog = os.path.splitext(prog)[0]
+
+    if appdirs.system == 'linux':
+        prog = re.sub(r'[\-\s]+', '-', prog).lower()
+    else:
+        prog = ' '.join([x.capitalize() for x in re.split(r'[\-\s]+', prog)])
+
+    return prog
 
 
-def prog_basic_configfile(prog=os.path.basename(sys.argv[0])):
-    return xdg_config_home + '/' + prog_name(prog) + '.ini'
+def prog_config_file(prog=None):
+    if prog is None:
+        prog = prog_name()
+
+    return user_path('config') + '.ini'
 
 
-def prog_configfile(name, prog=os.path.basename(sys.argv[0])):
-    return xdg_config_home + '/' + prog_name(prog) + '/' + name
+def user_path(typ, name=None, prog=None, create=False):
+    m = {
+        'config': appdirs.user_config_dir,
+        'data': appdirs.user_data_dir,
+        'cache': appdirs.user_cache_dir
+    }
 
+    if prog is None:
+        prog = prog_name()
 
-def prog_datafile(name, prog=os.path.basename(sys.argv[0]), create=False):
-    datafile = xdg_data_home + '/' + prog_name(prog) + '/' + name
-    dname, bname = os.path.split(datafile)
-    if create and not os.path.exists(dname):
-        os.makedirs(dname)
+    if typ not in m:
+        raise ValueError("Invalid user_path type: '{type}'".format(type=typ))
 
-    return datafile
+    is_folder = name is None
 
+    ret = m[typ](prog)
+    if not is_folder:
+        ret = os.path.join(m[typ](prog), name)
 
-def prog_cachedir(name, prog=os.path.basename(sys.argv[0]), create=False):
-    cachedir = xdg_cache_home + '/' + prog_name(prog) + '/' + name
-    if create and not os.path.exists(cachedir):
-        os.makedirs(cachedir)
+    if create:
+        if is_folder:
+            os.path.makedirs(ret)
+        else:
+            dname, bname = os.path.split(ret)
+            os.path.makedirs(dname)
 
-    return cachedir
+    return ret
 
 
 def shortify(s, length=50):
@@ -329,7 +351,9 @@ def utcnow_timestamp():
 
 
 def configparser_to_dict(cp):
-    return {section: {k: v for (k, v) in cp[section].items()} for section in cp.sections()}
+    return {section:
+            {k: v for (k, v) in cp[section].items()}
+            for section in cp.sections()}
 
 
 def ini_load(path):

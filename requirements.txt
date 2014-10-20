@@ -1,4 +1,4 @@
-pyxdg
+appdirs
 
 # sqlalchemy_helpers
 sqlalchemy
