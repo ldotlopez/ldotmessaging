@@ -212,7 +212,7 @@ class ModuleFactory:
 
     def __call__(self, name):
         if name not in self._m:
-            if name in self._ns_sym:
+            if hasattr(self._ns_sym, name):
                 self._m[name] = getattr(self._ns_sym, name)
 
             else:
@@ -328,6 +328,9 @@ def utcnow_timestamp():
     return int(time.mktime(datetime.datetime.utcnow().timetuple()))
 
 
+def configparser_to_dict(cp):
+    return {section: {k: v for (k, v) in cp[section].items()} for section in cp.sections()}
+
 def ini_load(path):
     cp = configparser.ConfigParser()
 
@@ -335,7 +338,7 @@ def ini_load(path):
     cp.read_file(fh)
     fh.close()
 
-    return {section: {k: v for (k, v) in cp[section].items()} for section in cp.sections()}
+    return configparser_to_dict(cp)
 
 
 def ini_dump(d, path):
