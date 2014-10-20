@@ -310,7 +310,7 @@ def prog_config_file(prog=None):
     return user_path('config') + '.ini'
 
 
-def user_path(typ, name=None, prog=None, create=False):
+def user_path(typ, name=None, prog=None, create=False, is_folder=None):
     m = {
         'config': appdirs.user_config_dir,
         'data': appdirs.user_data_dir,
@@ -320,21 +320,24 @@ def user_path(typ, name=None, prog=None, create=False):
     if prog is None:
         prog = prog_name()
 
+    if is_folder is None:
+        is_folder = name is None
+
     if typ not in m:
         raise ValueError("Invalid user_path type: '{type}'".format(type=typ))
 
-    is_folder = name is None
-
     ret = m[typ](prog)
-    if not is_folder:
+    if name is not None:
         ret = os.path.join(m[typ](prog), name)
 
     if create:
-        if is_folder:
-            os.path.makedirs(ret)
+        if is_folder is True:
+            mkdir_target = ret
         else:
-            dname, bname = os.path.split(ret)
-            os.path.makedirs(dname)
+            mkdir_target = os.path.split(ret)[0]
+
+        if not os.path.exists(mkdir_target):
+            os.makedirs(mkdir_target)
 
     return ret
 

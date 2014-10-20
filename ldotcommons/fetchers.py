@@ -5,9 +5,8 @@ import re
 import socket
 from urllib import request, error as urllib_error
 
-from . import logging
+from . import logging, utils
 from .cache import NullCache, DiskCache
-from .utils import prog_cachedir
 
 _logger = logging.get_logger('ldotcommons.fetchers')
 
@@ -46,8 +45,9 @@ class MockFetcher(BaseFetcher):
 
 class UrllibFetcher(BaseFetcher):
     def __init__(self, headers={}, cache=False, cache_delta=-1):
+        import ipdb; ipdb.set_trace()
         if cache:
-            cache_path = prog_cachedir('urllibfetcher', create=True)
+            cache_path = utils.user_path('cache', 'urllibfetcher', create=True, is_folder=True)
             self._cache = DiskCache(basedir=cache_path, delta=cache_delta)
             _logger.debug('UrllibFetcher using cache {}'.format(cache_path))
         else:
