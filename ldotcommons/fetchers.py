@@ -45,7 +45,6 @@ class MockFetcher(BaseFetcher):
 
 class UrllibFetcher(BaseFetcher):
     def __init__(self, headers={}, cache=False, cache_delta=-1):
-        import ipdb; ipdb.set_trace()
         if cache:
             cache_path = utils.user_path('cache', 'urllibfetcher', create=True, is_folder=True)
             self._cache = DiskCache(basedir=cache_path, delta=cache_delta)
