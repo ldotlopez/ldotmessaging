@@ -15,6 +15,7 @@ Base = declarative.declarative_base()
 def _re_fn(regexp, other):
     return re.search(regexp, other, re.IGNORECASE) is not None
 
+
 #@property
 #def __monkeypatch_Base_query(self):
 #    return self.session.query(self)
@@ -26,12 +27,18 @@ def create_engine(uri='sqlite:///:memory:', echo=False, dburi=None):
         uri = dburi
 
     engine = sa.create_engine(uri, echo=echo)
-    Base.metadata.create_all(engine)
+    # Base.metadata.create_all(bind=engine)
 
     # Monkeypatch magic
     # setattr(Base, 'engine', engine)
     # setattr(Base, 'session', create_session(engine=engine))
     # setattr(Base.__class__, 'query', __monkeypatch_Base_query)
+
+    # Enable regexp functionality for sqlite connections
+    if uri.startswith('sqlite:///'):
+        @event.listens_for(engine, "begin")
+        def do_begin(conn):
+            conn.connection.create_function('regexp', 2, _re_fn)
 
     return engine
 
@@ -40,11 +47,12 @@ def create_session(uri=None, engine=None, echo=False, dburi=None):
     if not engine:
         engine = create_engine(uri=uri, echo=echo, dburi=dburi)
 
-    session = orm.scoped_session(orm.sessionmaker(bind=engine))
+    sess = orm.sessionmaker()
+    sess.configure(bind=engine)
+    Base.metadata.create_all(engine)
+    session = sess()
 
-    @event.listens_for(engine, "begin")
-    def do_begin(conn):
-        conn.connection.create_function('regexp', 2, _re_fn)
+    # session = orm.scoped_session(orm.sessionmaker(bind=engine))
 
     return session
 
