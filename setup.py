@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
     name='ldotcommons',
-    version='0.0.0.20141020.1',
+    version='0.0.0.20141022.1',
     author='Luis López',
     author_email='ldotlopez@gmail.com',
     packages=['ldotcommons'],
