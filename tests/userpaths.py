@@ -37,7 +37,7 @@ class UserPathsOSX(unittest.TestCase):
 
         self.assertEqual(
             utils.user_path('config', 'foo.cfg'),
-            os.path.expanduser('~/Library/Application Support/Userpaths/foo.cfg'))
+            os.path.expanduser('~/Library/Application Support/Userpaths/Foo.cfg'))
 
     def test_user_data(self):
         self.assertEqual(
@@ -46,7 +46,7 @@ class UserPathsOSX(unittest.TestCase):
 
         self.assertEqual(
             utils.user_path('data', 'foo'),
-            os.path.expanduser('~/Library/Application Support/Userpaths/foo'))
+            os.path.expanduser('~/Library/Application Support/Userpaths/Foo'))
 
     def test_user_cache(self):
         self.assertEqual(
@@ -55,7 +55,7 @@ class UserPathsOSX(unittest.TestCase):
 
         self.assertEqual(
             utils.user_path('cache', 'foo'),
-            os.path.expanduser('~/Library/Caches/Userpaths/foo'))
+            os.path.expanduser('~/Library/Caches/Userpaths/Foo'))
 
 
 class UserPathsLinux(unittest.TestCase):

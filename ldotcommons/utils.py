@@ -328,6 +328,9 @@ def user_path(typ, name=None, prog=None, create=False, is_folder=None):
 
     ret = m[typ](prog)
     if name is not None:
+        # Fix name for OSX
+        if appdirs.system == 'darwin':
+            name = os.path.sep.join([x.capitalize() for x in name.split(os.path.sep)])
         ret = os.path.join(m[typ](prog), name)
 
     if create:
