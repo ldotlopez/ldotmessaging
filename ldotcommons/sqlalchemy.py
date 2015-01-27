@@ -41,8 +41,10 @@ def create_engine(uri='sqlite:///:memory:', echo=False, dburi=None):
             conn.connection.create_function('regexp', 2, _re_fn)
 
         @event.listens_for(engine, "connect")
-        def do_connect(conn, record):
-            conn.execute('pragma foreign_keys=ON')
+        def set_sqlite_pragma(conn, record):
+            cursor = conn.cursor()
+            cursor.execute("PRAGMA foreign_keys=ON")
+            cursor.close()
 
     return engine
 
