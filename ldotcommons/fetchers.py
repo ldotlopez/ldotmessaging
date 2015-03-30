@@ -8,8 +8,6 @@ from urllib import request, error as urllib_error
 from . import logging, utils
 from .cache import NullCache, DiskCache
 
-_logger = logging.get_logger('ldotcommons.fetchers')
-
 
 class FetchError(Exception):
     pass
@@ -44,11 +42,16 @@ class MockFetcher(BaseFetcher):
 
 
 class UrllibFetcher(BaseFetcher):
-    def __init__(self, headers={}, cache=False, cache_delta=-1):
+    def __init__(self, headers={}, cache=False, cache_delta=-1, logger=None):
+        if not logger:
+            logger = logging.get_logger('ldotcommons.fetchers.urllibfetcher')
+        self._logger = logger.getChild('urllibfetcher')
+
         if cache:
             cache_path = utils.user_path('cache', 'urllibfetcher', create=True, is_folder=True)
-            self._cache = DiskCache(basedir=cache_path, delta=cache_delta)
-            _logger.debug('UrllibFetcher using cache {}'.format(cache_path))
+            self._cache = DiskCache(basedir=cache_path, delta=cache_delta,
+                                    logger=self._logger.getChild('diskcache'))
+            self._logger.debug('UrllibFetcher using cache {}'.format(cache_path))
         else:
             self._cache = NullCache()
 
@@ -57,7 +60,7 @@ class UrllibFetcher(BaseFetcher):
     def fetch(self, url, **opts):
         buff = self._cache.get(url)
         if buff:
-            _logger.debug("found in cache: {}".format(url))
+            self._logger.debug("found in cache: {}".format(url))
             return buff
 
         try:
@@ -72,6 +75,6 @@ class UrllibFetcher(BaseFetcher):
         except (socket.error, urllib_error.HTTPError) as e:
             raise FetchError("Unable to fetch {0}: {1}".format(url, e))
 
-        _logger.debug("stored in cache: {}".format(url))
+        self._logger.debug("stored in cache: {}".format(url))
         self._cache.set(url, buff)
         return buff
