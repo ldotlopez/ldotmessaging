@@ -73,7 +73,7 @@ class UrllibFetcher(BaseFetcher):
             else:
                 buff = resp.read()
         except (socket.error, urllib_error.HTTPError) as e:
-            raise FetchError("Unable to fetch {0}: {1}".format(url, e))
+            raise FetchError("{message}".format(message=e))
 
         self._logger.debug("stored in cache: {}".format(url))
         self._cache.set(url, buff)
