@@ -20,7 +20,7 @@ class KeyValueItem(Base):
 
     def __init__(self, key, value, typ=None):
         self.key = key
-        self._type, self._value = self._native_to_internal(value)
+        self._typ, self._value = self._native_to_internal(value)
         if typ:
             self._typ = typ
 

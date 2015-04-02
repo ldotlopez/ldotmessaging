@@ -399,6 +399,25 @@ def breakpoint():
     get_debugger().set_trace()
 
 
+def parse_interval(string):
+    _table = {
+        's': 1,
+        'm': 60,
+        'h': 60*60,
+        'd': 60*60*24,
+        'w': 60*60*24*7,
+        'M': 60*60*24*30,
+        'Y': 60*60*24*365
+    }
+    m = re.match(r'^(?P<amount>\d+)(?P<modifier>[smhdwMY])?$', string)
+    if not m:
+        raise ValueError(string)
+
+    amount = int(m.group('amount'))
+    multiplier = _table.get(m.group('modifier') or 's')
+    return amount*multiplier
+
+
 def parse_size(string):
     _table = {key: 1000 ** (idx + 1)
               for (idx, key) in enumerate(['k', 'm', 'g', 't'])}
