@@ -67,6 +67,18 @@ class RecursiveDict(dict):
                 return False
 
 
+class ValidatedRecursiveDict(RecursiveDict):
+    def __init__(self, d={}, validator=None):
+        self._validator = validator
+        super(ValidatedRecursiveDict, self).__init__(d)
+
+    def __setitem__(self, key, value):
+        if self._validator and not self._validator(key, value):
+            raise ValueError(value)
+
+        super(ValidatedRecursiveDict, self).__setitem__(key, value)
+
+
 class Store(RecursiveDict):
     def __getattr__(self, attr):
         rd = super(Store, self)

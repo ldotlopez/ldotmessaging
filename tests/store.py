@@ -108,19 +108,23 @@ class TestStore(unittest.TestCase):
         self.assertEqual(x.bar.odd, 'x')
 
 
-class TestValidatedStore(unittest.TestCase):
+class ValidatedRecursiveDict(unittest.TestCase):
     def test_basic_schema(self):
         def validator(k, v):
-            print("{}: {}".format(k, v))
+            # print("{}: {}".format(k, v))
+            if k.endswith('_int') and not isinstance(v, int):
+                return False
+
             return True
 
-        import ipdb; ipdb.set_trace()
-        foo = store.ValidatedStore(validator=validator)
+        foo = store.ValidatedRecursiveDict(validator=validator)
         foo['a_int'] = 1
         foo['b_int'] = 1
         foo['point.x'] = 1.0
         foo['complex.real'] = 1
         foo['complex.imaginary'] = 2
+        with self.assertRaises(ValueError):
+            foo['key_int'] = 'a'
 
 if __name__ == '__main__':
     unittest.main()
