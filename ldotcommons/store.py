@@ -1,6 +1,6 @@
-class RecursiveDict(dict):
+class Store(dict):
     def __init__(self, d={}):
-        super(RecursiveDict, self).__init__()
+        super(Store, self).__init__()
         for (k, v) in d.items():
             self.__setitem__(k, v)
 
@@ -17,7 +17,7 @@ class RecursiveDict(dict):
         if not isinstance(key, str):
             raise TypeError()
 
-        store = super(RecursiveDict, self)
+        store = super(Store, self)
 
         if '.' not in key:
             store.__setitem__(key, value)
@@ -26,13 +26,13 @@ class RecursiveDict(dict):
             key, subkey = key.split('.', 1)
 
             if key not in self:
-                store.__setitem__(key, RecursiveDict({subkey: value}))
+                store.__setitem__(key, Store({subkey: value}))
 
             else:
                 store.__getitem__(key).__setitem__(subkey, value)
 
     def __getitem__(self, key):
-        store = super(RecursiveDict, self)
+        store = super(Store, self)
 
         if '.' not in key:
             return store.__getitem__(key)
@@ -47,7 +47,7 @@ class RecursiveDict(dict):
                 raise KeyError(key + '.' + e.args[0])
 
     def __delitem__(self, key):
-        store = super(RecursiveDict, self)
+        store = super(Store, self)
 
         if '.' not in key:
             store.__delitem__(key)
@@ -57,7 +57,7 @@ class RecursiveDict(dict):
             store.__getitem__(key).__delitem__(subkey)
 
     def __contains__(self, key):
-        store = super(RecursiveDict, self)
+        store = super(Store, self)
 
         if '.' not in key:
             return store.__contains__(key)
@@ -70,24 +70,24 @@ class RecursiveDict(dict):
                 return False
 
 
-class ValidatedRecursiveDict(RecursiveDict):
+class ValidatedStore(Store):
     def __init__(self, d={}, validator=None):
         self._validator = validator
-        super(ValidatedRecursiveDict, self).__init__(d)
+        super(ValidatedStore, self).__init__(d)
 
     def __setitem__(self, key, value):
         if self._validator and not self._validator(key, value):
             raise ValueError(value)
 
-        super(ValidatedRecursiveDict, self).__setitem__(key, value)
+        super(ValidatedStore, self).__setitem__(key, value)
 
 
-class Store(RecursiveDict):
+class AttrStore(Store):
     def __getattr__(self, attr):
         rd = super(Store, self)
 
         if attr not in self:
-            rd.__setitem__(attr, Store())
+            rd.__setitem__(attr, AttrStore())
 
         return rd.__getitem__(attr)
 

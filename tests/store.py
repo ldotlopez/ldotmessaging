@@ -2,9 +2,9 @@ import unittest
 from ldotcommons import store
 
 
-class TestRecursiveDict(unittest.TestCase):
+class TestStore(unittest.TestCase):
     def test_init(self):
-        rd = store.RecursiveDict({
+        rd = store.Store({
             'x': 1,
             'y': 2,
             'foo.bar': 3.14
@@ -14,14 +14,14 @@ class TestRecursiveDict(unittest.TestCase):
         with self.assertRaises(KeyError):
             rd['a.b.c']
 
-        rd = store.RecursiveDict()
+        rd = store.Store()
         rd['x'] = 1
         self.assertEqual(rd['x'], 1)
         with self.assertRaises(KeyError):
             rd['a.b.c']
 
     def test_setget(self):
-        rd = store.RecursiveDict()
+        rd = store.Store()
         rd['x'] = 1
 
         self.assertEqual(rd['x'], 1)
@@ -32,7 +32,7 @@ class TestRecursiveDict(unittest.TestCase):
             rd[1.3] = 1
 
     def test_update(self):
-        rd = store.RecursiveDict({
+        rd = store.Store({
             'x': 1,
             'y': 2,
             'foo.bar': 3,
@@ -52,7 +52,7 @@ class TestRecursiveDict(unittest.TestCase):
         })
 
     def test_delete(self):
-        rd = store.RecursiveDict({
+        rd = store.Store({
             'x': 1,
             'y': 2,
             'foo.bar': 3,
@@ -75,7 +75,7 @@ class TestRecursiveDict(unittest.TestCase):
         })
 
     def test_contains(self):
-        rd = store.RecursiveDict({
+        rd = store.Store({
             'x': 1,
             'y': 2,
             'foo.bar': 3,
@@ -89,7 +89,7 @@ class TestRecursiveDict(unittest.TestCase):
         self.assertFalse('bar' in rd)
 
     def test_keyerror(self):
-        rd = store.RecursiveDict({
+        rd = store.Store({
             'x.y.z': None
         })
         with self.assertRaises(KeyError) as e:
@@ -101,9 +101,9 @@ class TestRecursiveDict(unittest.TestCase):
         self.assertEqual(e.exception.args[0], 'a')
 
 
-class TestStore(unittest.TestCase):
+class TestAttrStore(unittest.TestCase):
     def test_simple(self):
-        x = store.Store()
+        x = store.AttrStore()
         x.foo = 1
         x.bar.odd = 'x'
 
@@ -111,7 +111,7 @@ class TestStore(unittest.TestCase):
         self.assertEqual(x.bar.odd, 'x')
 
 
-class ValidatedRecursiveDict(unittest.TestCase):
+class ValidatedStore(unittest.TestCase):
     def test_basic_schema(self):
         def validator(k, v):
             # print("{}: {}".format(k, v))
@@ -120,7 +120,7 @@ class ValidatedRecursiveDict(unittest.TestCase):
 
             return True
 
-        foo = store.ValidatedRecursiveDict(validator=validator)
+        foo = store.ValidatedStore(validator=validator)
         foo['a_int'] = 1
         foo['b_int'] = 1
         foo['point.x'] = 1.0
