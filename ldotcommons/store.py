@@ -14,6 +14,9 @@ class RecursiveDict(dict):
         return self.__delitem__(key)
 
     def __setitem__(self, key, value):
+        if not isinstance(key, str):
+            raise TypeError()
+
         store = super(RecursiveDict, self)
 
         if '.' not in key:

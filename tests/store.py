@@ -28,6 +28,9 @@ class TestRecursiveDict(unittest.TestCase):
         with self.assertRaises(KeyError):
             rd['y']
 
+        with self.assertRaises(TypeError):
+            rd[1.3] = 1
+
     def test_update(self):
         rd = store.RecursiveDict({
             'x': 1,
