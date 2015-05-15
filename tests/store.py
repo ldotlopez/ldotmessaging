@@ -1,5 +1,6 @@
 import unittest
 from ldotcommons import store
+import configparser
 
 
 class TestStore(unittest.TestCase):
@@ -111,7 +112,7 @@ class TestAttrStore(unittest.TestCase):
         self.assertEqual(x.bar.odd, 'x')
 
 
-class ValidatedStore(unittest.TestCase):
+class TestValidatedStore(unittest.TestCase):
     def test_basic_schema(self):
         def validator(k, v):
             # print("{}: {}".format(k, v))
@@ -128,6 +129,73 @@ class ValidatedStore(unittest.TestCase):
         foo['complex.imaginary'] = 2
         with self.assertRaises(ValueError):
             foo['key_int'] = 'a'
+
+
+class TestConfigLoader(unittest.TestCase):
+    ini = """
+[main]
+a = 1
+b = 2
+
+[subsect_a]
+c = 3
+d = 4
+
+[subsect_b]
+e = 5
+f = 6
+
+[extensions.importer.foo]
+g = 6
+h = 7
+
+[extensions.importer.bar]
+i = 8
+j = 9
+
+[extensions.downloader.zar]
+k = 10
+"""
+    d = {
+        'a': '1',
+        'b': '2',
+        'subsect_a.c': '3',
+        'subsect_a.d': '4',
+        'subsect_b.e': '5',
+        'subsect_b.f': '6',
+        'extensions.importer.foo.g': '6',
+        'extensions.importer.foo.h': '7',
+        'extensions.importer.bar.i': '8',
+        'extensions.importer.bar.j': '9',
+        'extensions.downloader.zar.k': '10'
+    }
+
+    def test_config(self):
+        root_sections = ('main', )
+
+        def is_root(x):
+            return x in root_sections
+
+        cp = configparser.ConfigParser()
+        cp.read_string(self.ini)
+
+        kvs = {}
+
+        for s in filter(is_root, cp.sections()):
+            kvs.update({k: v for (k, v) in cp[s].items()})
+
+        for s in filter(lambda x: not is_root(x), cp.sections()):
+            kvs.update({s + '.' + k: v for (k, v) in cp[s].items()})
+
+        self.assertEqual(self.d, kvs)
+
+        # cs = store.AttrStore()
+        # for (k, v) in kvs.items():
+        #     cs[k] = v
+
+        # import ipdb; ipdb.set_trace()
+        # self.assertEqual(cs.extensions.importer.foo.g, '6')
+
 
 if __name__ == '__main__':
     unittest.main()

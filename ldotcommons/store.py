@@ -1,4 +1,8 @@
 class Store(dict):
+    """
+    Key-value store using a namespace schema.
+    Namespace separator is dot ('.') character
+    """
     def __init__(self, d={}):
         super(Store, self).__init__()
         for (k, v) in d.items():
@@ -83,13 +87,22 @@ class ValidatedStore(Store):
 
 
 class AttrStore(Store):
+    """
+    AttrStore enhances Store by providing access by attribute
+    """
     def __getattr__(self, attr):
         rd = super(Store, self)
 
+        # This assignment polutes the internal namespace, we really want this?
         if attr not in self:
             rd.__setitem__(attr, AttrStore())
 
-        return rd.__getitem__(attr)
+        # Not sure about this
+        r = rd.__getitem__(attr, AttrStore())
+        if isinstance(r, Store):
+            return AttrStore(d=r)
+        else:
+            return r
 
     def __setattr__(self, attr, value):
         rd = super(Store, self)
