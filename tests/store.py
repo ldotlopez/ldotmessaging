@@ -101,34 +101,100 @@ class TestStore(unittest.TestCase):
             rd['a.b.c']
         self.assertEqual(e.exception.args[0], 'a')
 
+    def test_builtin_validator(self):
+        type_table = {
+            'a': int,
+            'b': float,
+            'c': str,
+            'x.y': int
+        }
+
+        d = {
+            'a': 1,
+            'b': 1.2,
+            'c': 'foo',
+            'x.y': 1
+        }
+
+        rd = store.Store(
+            d=d,
+            validator=store.type_validator(type_table, cast=False))
+
+        rd['a'] = 2
+        self.assertEqual(rd['a'], 2)
+
+        with self.assertRaises(TypeError):
+            rd['a'] = 'i want a int'
+
+        with self.assertRaises(TypeError):
+            rd['z'] = 'this key should not exist'
+
+        with self.assertRaises(TypeError):
+            rd['x'] = 'this is a namespace, not a key'
+
+    def test_cast_validator(self):
+        data = {
+            'intkey': 1,
+            'strkey': 'foo',
+            'boolkey': True,
+            'namespace.test': {'foo': 'bar'}
+        }
+        types = {
+            'intkey': int,
+            'strkey': str,
+            'boolkey': bool,
+            'namespace.test': dict,
+            'namespace.test.foo': str
+        }
+        rd = store.Store(
+            data,
+            validator=store.type_validator(types, cast=True))
+
+        rd['intkey'] = '8'
+        rd['strkey'] = 0
+        rd['boolkey'] = '0'
+        rd['namespace.test.foo'] = 1
+        self.assertEqual(rd['intkey'], 8)
+        self.assertEqual(rd['strkey'], '0')
+        self.assertEqual(rd['boolkey'], False)
+        self.assertEqual(rd['namespace.test.foo'], '1')
+
+    def test_relaxed_validator(self):
+        data = {
+            'defined': 1
+        }
+        types = {
+            'defined': int
+        }
+
+        rd = store.Store(
+            data,
+            validator=store.type_validator(types, relaxed=True))
+        with self.assertRaises(TypeError):
+            rd['defined'] = 'foo'
+        rd['undefined'] = object()
+
+        rd = store.Store(
+            data,
+            validator=store.type_validator(types, relaxed=False))
+        with self.assertRaises(TypeError):
+            rd['undefined'] = object()
+        rd['defined'] = 1
+
 
 class TestAttrStore(unittest.TestCase):
     def test_simple(self):
-        x = store.AttrStore()
-        x.foo = 1
-        x.bar.odd = 'x'
+        data = {
+            'foo': 1,
+            'bar.odd': 'x'
+        }
+        x = store.AttrStore(data)
 
         self.assertEqual(x.foo, 1)
         self.assertEqual(x.bar.odd, 'x')
 
-
-class TestValidatedStore(unittest.TestCase):
-    def test_basic_schema(self):
-        def validator(k, v):
-            # print("{}: {}".format(k, v))
-            if k.endswith('_int') and not isinstance(v, int):
-                return False
-
-            return True
-
-        foo = store.ValidatedStore(validator=validator)
-        foo['a_int'] = 1
-        foo['b_int'] = 1
-        foo['point.x'] = 1.0
-        foo['complex.real'] = 1
-        foo['complex.imaginary'] = 2
-        with self.assertRaises(ValueError):
-            foo['key_int'] = 'a'
+        x.bar.odd = 'a'
+        self.assertEqual(x.bar.odd, 'a')
 
 
 class TestConfigLoader(unittest.TestCase):

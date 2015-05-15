@@ -1,10 +1,47 @@
+def type_validator(type_table, cast=False, relaxed=False):
+    _str_booleans = (
+        '0', '1',
+        'yes', 'no',
+        'true', 'false'
+    )
+
+    def _validator(k, v):
+        if k not in type_table:
+            if relaxed:
+                return v
+            else:
+                raise TypeError(k + ": can't validate")
+
+        req_type = type_table[k]
+        if isinstance(v, req_type):
+            return v
+
+        if req_type is bool:
+            if isinstance(v, str) and v.lower() in _str_booleans:
+                return v in (
+                    x for (idx, x) in enumerate(_str_booleans) if idx % 2
+                )
+            else:
+                raise TypeError(k + ": can't validate")
+
+        try:
+            return req_type(v)
+        except ValueError:
+            pass
+
+        raise TypeError(k + ": invalid type")
+
+    return _validator
+
+
 class Store(dict):
     """
     Key-value store using a namespace schema.
     Namespace separator is dot ('.') character
     """
-    def __init__(self, d={}):
+    def __init__(self, d={}, validator=None):
         super(Store, self).__init__()
+        self._validator = validator
         for (k, v) in d.items():
             self.__setitem__(k, v)
 
@@ -22,6 +59,8 @@ class Store(dict):
             raise TypeError()
 
         store = super(Store, self)
+        if self._validator:
+            value = self._validator(key, value)
 
         if '.' not in key:
             store.__setitem__(key, value)
@@ -74,18 +113,6 @@ class Store(dict):
                 return False
 
 
-class ValidatedStore(Store):
-    def __init__(self, d={}, validator=None):
-        self._validator = validator
-        super(ValidatedStore, self).__init__(d)
-
-    def __setitem__(self, key, value):
-        if self._validator and not self._validator(key, value):
-            raise ValueError(value)
-
-        super(ValidatedStore, self).__setitem__(key, value)
-
-
 class AttrStore(Store):
     """
     AttrStore enhances Store by providing access by attribute
@@ -95,10 +122,11 @@ class AttrStore(Store):
 
         # This assignment polutes the internal namespace, we really want this?
         if attr not in self:
-            rd.__setitem__(attr, AttrStore())
+            r = AttrStore()
+            rd.__setitem__(attr, r)
+        else:
+            r = rd.__getitem__(attr)
 
-        # Not sure about this
-        r = rd.__getitem__(attr, AttrStore())
         if isinstance(r, Store):
             return AttrStore(d=r)
         else:
