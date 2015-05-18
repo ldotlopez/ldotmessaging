@@ -189,7 +189,7 @@ class TestAttrStore(unittest.TestCase):
             'bar.odd': 'x'
         }
         x = store.AttrStore(data)
-
+        
         self.assertEqual(x.foo, 1)
         self.assertEqual(x.bar.odd, 'x')
 

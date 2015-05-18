@@ -114,25 +114,16 @@ class Store(dict):
 
 
 class AttrStore(Store):
-    """
-    AttrStore enhances Store by providing access by attribute
-    """
+    def __setitem__(self, key, value):
+        if '.' not in key:
+            setattr(self, key, value)
+        else:
+            key, subkey = key.split('.', 1)
+            setattr(self, key, AttrStore({subkey: value}))
+
     def __getattr__(self, attr):
-        rd = super(Store, self)
-
-        # This assignment polutes the internal namespace, we really want this?
-        if attr not in self:
-            r = AttrStore()
-            rd.__setitem__(attr, r)
+        s = super(AttrStore, self)
+        if s.__contains__(attr):
+            return s.__getitem__(attr)
         else:
-            r = rd.__getitem__(attr)
-
-        if isinstance(r, Store):
-            return AttrStore(d=r)
-        else:
-            return r
-
-    def __setattr__(self, attr, value):
-        rd = super(Store, self)
-
-        return rd.__setitem__(attr, value)
+            return s.__getattr__(attr)
