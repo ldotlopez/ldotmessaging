@@ -1,6 +1,8 @@
+import argparse
+import configparser
+import textwrap
 import unittest
 from ldotcommons import store
-import configparser
 
 
 class TestStore(unittest.TestCase):
@@ -189,7 +191,7 @@ class TestAttrStore(unittest.TestCase):
             'bar.odd': 'x'
         }
         x = store.AttrStore(data)
-        
+
         self.assertEqual(x.foo, 1)
         self.assertEqual(x.bar.odd, 'x')
 
@@ -198,31 +200,33 @@ class TestAttrStore(unittest.TestCase):
 
 
 class TestConfigLoader(unittest.TestCase):
-    ini = """
-[main]
-a = 1
-b = 2
+    ini_str = textwrap.dedent("""
+        [main]
+        a = 1
+        b = 2
 
-[subsect_a]
-c = 3
-d = 4
+        [subsect_a]
+        c = 3
+        d = 4
 
-[subsect_b]
-e = 5
-f = 6
+        [subsect_b]
+        e = 5
+        f = 6
 
-[extensions.importer.foo]
-g = 6
-h = 7
+        [extensions.importer.foo]
+        g = 6
+        h = 7
 
-[extensions.importer.bar]
-i = 8
-j = 9
+        [extensions.importer.bar]
+        i = 8
+        j = 9
 
-[extensions.downloader.zar]
-k = 10
-"""
-    d = {
+        [extensions.downloader.zar]
+        k = 10
+        foo.bar = x
+        """)
+
+    ini_dict = {
         'a': '1',
         'b': '2',
         'subsect_a.c': '3',
@@ -233,34 +237,30 @@ k = 10
         'extensions.importer.foo.h': '7',
         'extensions.importer.bar.i': '8',
         'extensions.importer.bar.j': '9',
-        'extensions.downloader.zar.k': '10'
+        'extensions.downloader.zar.k': '10',
+        'extensions.downloader.zar.foo.bar': 'x'
     }
 
-    def test_config(self):
-        root_sections = ('main', )
-
-        def is_root(x):
-            return x in root_sections
+    def test_configparser(self):
+        s = store.Store()
 
         cp = configparser.ConfigParser()
-        cp.read_string(self.ini)
+        cp.read_string(self.ini_str)
 
-        kvs = {}
+        s.load_configparser(cp, root_sections=('main,'))
+        self.assertTrue(s, self.ini_dict)
 
-        for s in filter(is_root, cp.sections()):
-            kvs.update({k: v for (k, v) in cp[s].items()})
+    def test_argparser(self):
+        s = store.Store()
 
-        for s in filter(lambda x: not is_root(x), cp.sections()):
-            kvs.update({s + '.' + k: v for (k, v) in cp[s].items()})
+        ap = argparse.ArgumentParser()
+        ap.add_argument('-i', dest='i', type=int)
+        ap.add_argument('--bool', dest='bool', action='store_true')
 
-        self.assertEqual(self.d, kvs)
+        args = ap.parse_args(['-i', '1', '--bool'])
+        s.load_arguments(args)
 
-        # cs = store.AttrStore()
-        # for (k, v) in kvs.items():
-        #     cs[k] = v
-
-        # import ipdb; ipdb.set_trace()
-        # self.assertEqual(cs.extensions.importer.foo.g, '6')
+        self.assertEqual(s, {'i': 1, 'bool': True})
 
 
 if __name__ == '__main__':

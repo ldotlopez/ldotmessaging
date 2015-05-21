@@ -45,6 +45,25 @@ class Store(dict):
         for (k, v) in d.items():
             self.__setitem__(k, v)
 
+    def load_configparser(self, cp, root_sections=()):
+        def is_root(x):
+            return x in root_sections
+
+        kvs = {}
+
+        for s in filter(is_root, cp.sections()):
+            kvs.update({k: v for (k, v) in cp[s].items()})
+
+        for s in filter(lambda x: not is_root(x), cp.sections()):
+            kvs.update({s + '.' + k: v for (k, v) in cp[s].items()})
+
+        for (k, v) in kvs.items():
+            self.set(k, v)
+
+    def load_arguments(self, args):
+        for (k, v) in vars(args).items():
+            self.set(k, v)
+
     def set(self, key, value):
         return self.__setitem__(key, value)
 
