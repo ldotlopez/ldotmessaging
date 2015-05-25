@@ -1,35 +1,86 @@
+from glob import fnmatch
+
+_undef = object()
+_str_booleans = (
+    '0', '1',
+    'yes', 'no',
+    'y', 'n',
+    'true', 'false'
+)
+
+
+def _cast_value(v, req_type):
+    if isinstance(v, req_type):
+        return v
+
+    if req_type is bool:
+        if isinstance(v, str) and v.lower() in _str_booleans:
+            return v in (
+                x for (idx, x) in enumerate(_str_booleans) if idx % 2
+            )
+        else:
+            raise ValueError(v)
+
+    try:
+        return req_type(v)
+    except ValueError:
+        pass
+
+    raise ValueError(v)
+
+
 def type_validator(type_table, cast=False, relaxed=False):
-    _str_booleans = (
-        '0', '1',
-        'yes', 'no',
-        'true', 'false'
-    )
 
     def _validator(k, v):
-        if k not in type_table:
-            if relaxed:
-                return v
-            else:
-                raise TypeError(k + ": can't validate")
+        # Check for exact match
+        if k in type_table:
+            try:
+                return _cast_value(v, type_table[k])
+            except ValueError():
+                pass
+            raise TypeError(k + ": invalid type")
 
-        req_type = type_table[k]
-        if isinstance(v, req_type):
+        # Check wildcards (regexps in the future?)
+        for (candidate_key, candidate_type) in type_table.items():
+            if fnmatch.fnmatch(k, candidate_key):
+                try:
+                    return _cast_value(v, candidate_type)
+                except ValueError():
+                    pass
+                raise TypeError(k + ": invalid type")
+
+        # No matches
+        if relaxed:
             return v
 
-        if req_type is bool:
-            if isinstance(v, str) and v.lower() in _str_booleans:
-                return v in (
-                    x for (idx, x) in enumerate(_str_booleans) if idx % 2
-                )
-            else:
-                raise TypeError(k + ": can't validate")
+        # Finally raise a typeerror
+        raise TypeError(k + ": can't validate")
 
-        try:
-            return req_type(v)
-        except ValueError:
-            pass
+        # Original code
+        # if k not in type_table:
+        #     if relaxed:
+        #         return v
+        #     else:
+        #         raise TypeError(k + ": can't validate")
 
-        raise TypeError(k + ": invalid type")
+        # req_type = type_table[k]
+        # if isinstance(v, req_type):
+        #     return v
+
+        # if req_type is bool:
+        #     if isinstance(v, str) and v.lower() in _str_booleans:
+        #         return v in (
+        #             x for (idx, x) in enumerate(_str_booleans) if idx % 2
+        #         )
+        #     else:
+        #         raise TypeError(k + ": can't validate")
+
+        # try:
+        #     return req_type(v)
+        # except ValueError:
+        #     pass
+
+        # raise TypeError(k + ": invalid type")
 
     return _validator
 
@@ -41,9 +92,19 @@ class Store(dict):
     """
     def __init__(self, d={}, validator=None):
         super(Store, self).__init__()
-        self._validator = validator
+
+        self._validators = {}
+        if validator:
+            self.set_validator(validator)
+
         for (k, v) in d.items():
             self.__setitem__(k, v)
+
+    def set_validator(self, func, ns=None):
+        if ns in self._validators:
+            raise Exception('Validator conflict')
+
+        self._validators[ns] = func
 
     def load_configparser(self, cp, root_sections=()):
         def is_root(x):
@@ -67,8 +128,15 @@ class Store(dict):
     def set(self, key, value):
         return self.__setitem__(key, value)
 
-    def get(self, key):
-        return self.__getitem__(key)
+    def get(self, key, default=_undef):
+        if key in self:
+            return self.__getitem__(key)
+
+        elif default is not _undef:
+            return default
+
+        else:
+            raise KeyError(key)
 
     def delete(self, key):
         return self.__delitem__(key)
@@ -78,8 +146,14 @@ class Store(dict):
             raise TypeError()
 
         store = super(Store, self)
-        if self._validator:
-            value = self._validator(key, value)
+
+        # Validate value
+        parts = key.split('.')
+        nss = ['.'.join(parts[0:i+1]) for i in range(len(parts)-1)]
+        for ns in reversed([None] + nss):
+            if ns in self._validators:
+                value = self._validators[ns](key, value)
+                break
 
         if '.' not in key:
             store.__setitem__(key, value)
