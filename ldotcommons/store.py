@@ -9,8 +9,21 @@ _str_booleans = (
 )
 
 
-def _cast_value(v, req_type):
+class NonEmptyStr(str):
+    pass
+
+
+def cast_value(v, req_type):
     if isinstance(v, req_type):
+        return v
+
+    if req_type is int:
+        return int(v)
+
+    if req_type is NonEmptyStr:
+        v = str(v)
+        if v is None or v == '':
+            raise ValueError(v)
         return v
 
     if req_type is bool:
@@ -23,19 +36,16 @@ def _cast_value(v, req_type):
 
     try:
         return req_type(v)
-    except ValueError:
-        pass
-
-    raise ValueError(v)
+    except ValueError as e:
+        raise ValueError(v) from e
 
 
 def type_validator(type_table, cast=False, relaxed=False):
-
     def _validator(k, v):
         # Check for exact match
         if k in type_table:
             try:
-                return _cast_value(v, type_table[k])
+                return cast_value(v, type_table[k])
             except ValueError():
                 pass
             raise TypeError(k + ": invalid type")
@@ -44,7 +54,7 @@ def type_validator(type_table, cast=False, relaxed=False):
         for (candidate_key, candidate_type) in type_table.items():
             if fnmatch.fnmatch(k, candidate_key):
                 try:
-                    return _cast_value(v, candidate_type)
+                    return cast_value(v, candidate_type)
                 except ValueError():
                     pass
                 raise TypeError(k + ": invalid type")
@@ -55,32 +65,6 @@ def type_validator(type_table, cast=False, relaxed=False):
 
         # Finally raise a typeerror
         raise TypeError(k + ": can't validate")
-
-        # Original code
-        # if k not in type_table:
-        #     if relaxed:
-        #         return v
-        #     else:
-        #         raise TypeError(k + ": can't validate")
-
-        # req_type = type_table[k]
-        # if isinstance(v, req_type):
-        #     return v
-
-        # if req_type is bool:
-        #     if isinstance(v, str) and v.lower() in _str_booleans:
-        #         return v in (
-        #             x for (idx, x) in enumerate(_str_booleans) if idx % 2
-        #         )
-        #     else:
-        #         raise TypeError(k + ": can't validate")
-
-        # try:
-        #     return req_type(v)
-        # except ValueError:
-        #     pass
-
-        # raise TypeError(k + ": invalid type")
 
     return _validator
 
@@ -94,17 +78,103 @@ class Store(dict):
         super(Store, self).__init__()
 
         self._validators = {}
+        self._namespaces = set()
+
         if validator:
             self.set_validator(validator)
 
         for (k, v) in d.items():
             self.__setitem__(k, v)
 
-    def set_validator(self, func, ns=None):
+    def set(self, key, value):
+        return self.__setitem__(key, value)
+
+    def get(self, key, default=_undef):
+        if key in self:
+            return self.__getitem__(key)
+
+        elif default is not _undef:
+            return default
+
+        else:
+            raise KeyError(key)
+
+    def delete(self, key):
+        return self.__delitem__(key)
+
+    @staticmethod
+    def get_namespaces(key):
+        parts = key.split('.')
+        return ('.'.join(parts[0:i+1]) for i in range(len(parts)-1))
+
+    def set_validator(self, func, ns=None, recheck=True):
         if ns in self._validators:
             raise Exception('Validator conflict')
 
         self._validators[ns] = func
+
+        if recheck:
+            # Dont use .children method here
+            subkeys = self.keys()
+            if ns:
+                s = ns + '.'
+                subkeys = filter(lambda k: k.startswith(s), subkeys)
+
+            for k in subkeys:
+                self.set(k, self.get(k))
+
+    def find_validator(self, key):
+        for ns in reversed([None] + list(self.get_namespaces(key))):
+            if ns in self._validators:
+                return self._validators[ns]
+
+    def __setitem__(self, key, value):
+        if not isinstance(key, str) or key == '':
+            raise TypeError(key)
+
+        # Namespaces can't be overwritten
+        if key in self._namespaces:
+            raise TypeError(key)
+
+        validator = self.find_validator(key)
+        if validator:
+            value = validator(key, value)
+
+        for x in self.get_namespaces(key):
+            self._namespaces.add(x)
+
+        super().__setitem__(key, value)
+
+    def __getitem__(self, key):
+        if key in self._namespaces:
+            return {k[len(key)+1:]: self.get(k) for k in self.children(key)}
+
+        else:
+            return super().__getitem__(key)
+
+    def __delitem__(self, key):
+        if key in self._namespaces:
+            children = list(self.children(key, fullpath=True))
+            for child in children:
+                del(self[child])
+        else:
+            super().__delitem__(key)
+
+    def children(self, key, fullpath=False):
+        s = key + '.'
+        r = (k for k in self)
+
+        # Filter children…
+        r = filter(lambda k: k.startswith(s), r)
+
+        # …but not grandchildrens
+        r = filter(lambda k: '.' not in k[len(s):], r)
+
+        # Full or short path?
+        if not fullpath:
+            r = map(lambda k: k[len(s):], r)
+
+        return r
 
     def load_configparser(self, cp, root_sections=()):
         def is_root(x):
@@ -125,85 +195,95 @@ class Store(dict):
         for (k, v) in vars(args).items():
             self.set(k, v)
 
-    def set(self, key, value):
-        return self.__setitem__(key, value)
+    # def _recheck(self, ns=None):
+    #     def _sub_stores():
+    #         return [ns + '.' + k if ns else k for k in self if isinstance(k, Store)]
 
-    def get(self, key, default=_undef):
-        if key in self:
-            return self.__getitem__(key)
+    #     def _sub
 
-        elif default is not _undef:
-            return default
+    #     root = self if not ns else self.get(ns, Store({}))
 
-        else:
-            raise KeyError(key)
+    #     sub_stores = []
+    #     sub_keys = []
+    #     for (k, v) in root.items():
+    #         (sub_stores if isinstance(v, Store) else sub_keys).append(k)
 
-    def delete(self, key):
-        return self.__delitem__(key)
+    #     # Deep recheck
+    #     for k in sub_keys:
+    #         root.set(k, root.get(k))
 
-    def __setitem__(self, key, value):
-        if not isinstance(key, str):
-            raise TypeError()
+    #     for k in sub_stores:
+    #         self._recheck
+    #     # Wait, must we recheck everything in under ns?
+    #     # if not recheck:
+    #     #     return
 
-        store = super(Store, self)
+    #     # root = self if ns is None else self.get(ns, Store({}))
+    #     # self._rebuild(root)
 
-        # Validate value
-        parts = key.split('.')
-        nss = ['.'.join(parts[0:i+1]) for i in range(len(parts)-1)]
-        for ns in reversed([None] + nss):
-            if ns in self._validators:
-                value = self._validators[ns](key, value)
-                break
+    # def __setitem__(self, key, value):
+    #     if not isinstance(key, str):
+    #         raise TypeError()
 
-        if '.' not in key:
-            store.__setitem__(key, value)
+    #     store = super(Store, self)
 
-        else:
-            key, subkey = key.split('.', 1)
+    #     # Validate value
+    #     parts = key.split('.')
+    #     nss = ['.'.join(parts[0:i+1]) for i in range(len(parts)-1)]
+    #     for ns in reversed([None] + nss):
+    #         if ns in self._validators:
+    #             value = self._validators[ns](key, value)
+    #             break
 
-            if key not in self:
-                store.__setitem__(key, Store({subkey: value}))
+    #     if '.' not in key:
+    #         store.__setitem__(key, value)
 
-            else:
-                store.__getitem__(key).__setitem__(subkey, value)
+    #     else:
+    #         key, subkey = key.split('.', 1)
 
-    def __getitem__(self, key):
-        store = super(Store, self)
+    #         if key not in self:
+    #             store.__setitem__(key, Store({subkey: value}))
 
-        if '.' not in key:
-            return store.__getitem__(key)
+    #         else:
+    #             store.__getitem__(key).__setitem__(subkey, value)
 
-        else:
-            key, subkey = key.split('.', 1)
-            substore = store.__getitem__(key)
+    # def __getitem__(self, key):
+    #     store = super(Store, self)
 
-            try:
-                return substore.__getitem__(subkey)
-            except KeyError as e:
-                raise KeyError(key + '.' + e.args[0])
+    #     if '.' not in key:
+    #         return store.__getitem__(key)
 
-    def __delitem__(self, key):
-        store = super(Store, self)
+    #     else:
+    #         key, subkey = key.split('.', 1)
+    #         substore = store.__getitem__(key)
 
-        if '.' not in key:
-            store.__delitem__(key)
+    #         try:
+    #             return substore.__getitem__(subkey)
+    #         except KeyError as e:
+    #             raise KeyError(key + '.' + e.args[0])
 
-        else:
-            key, subkey = key.split('.', 1)
-            store.__getitem__(key).__delitem__(subkey)
+    # def __delitem__(self, key):
+    #     store = super(Store, self)
 
-    def __contains__(self, key):
-        store = super(Store, self)
+    #     if '.' not in key:
+    #         store.__delitem__(key)
 
-        if '.' not in key:
-            return store.__contains__(key)
+    #     else:
+    #         key, subkey = key.split('.', 1)
+    #         store.__getitem__(key).__delitem__(subkey)
 
-        else:
-            key, subkey = key.split('.', 1)
-            try:
-                return store.__getitem__(key).__contains__(subkey)
-            except KeyError:
-                return False
+    # def __contains__(self, key):
+    #     store = super(Store, self)
+
+    #     if '.' not in key:
+    #         return store.__contains__(key)
+
+    #     else:
+    #         key, subkey = key.split('.', 1)
+    #         try:
+    #             return store.__getitem__(key).__contains__(subkey)
+    #         except KeyError:
+    #             return False
 
 
 class AttrStore(Store):

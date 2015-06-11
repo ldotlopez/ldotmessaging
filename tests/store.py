@@ -41,17 +41,14 @@ class TestStore(unittest.TestCase):
             'foo.bar': 3,
             'foo.raz': 4
         })
-
         rd['x'] = 'x'
         rd['foo.raz'] = 'y'
 
         self.assertEqual(rd, {
             'x': 'x',
             'y': 2,
-            'foo': {
-                'bar': 3,
-                'raz': 'y'
-            }
+            'foo.bar': 3,
+            'foo.raz': 'y'
         })
 
     def test_delete(self):
@@ -66,15 +63,12 @@ class TestStore(unittest.TestCase):
         })
         del rd['z.y.c']
         del rd['foo']
+
         self.assertEqual(rd, {
             'x': 1,
             'y': 2,
-            'z': {
-                'y': {
-                    'a': 5,
-                    'b': 6,
-                }
-            }
+            'z.y.a': 5,
+            'z.y.b': 6,
         })
 
     def test_contains(self):
@@ -98,10 +92,6 @@ class TestStore(unittest.TestCase):
         with self.assertRaises(KeyError) as e:
             rd['x.y.foo']
         self.assertEqual(e.exception.args[0], 'x.y.foo')
-
-        with self.assertRaises(KeyError) as e:
-            rd['a.b.c']
-        self.assertEqual(e.exception.args[0], 'a')
 
     def test_builtin_validator(self):
         type_table = {
@@ -183,20 +173,35 @@ class TestStore(unittest.TestCase):
             rd['undefined'] = object()
         rd['defined'] = 1
 
+    def test_recheck(self):
+        def validator(key, value):
+            if key == 'int':
+                try:
+                    return int(value)
+                except ValueError as e:
+                    raise TypeError() from e
 
-class TestAttrStore(unittest.TestCase):
-    def test_simple(self):
-        data = {
-            'foo': 1,
-            'bar.odd': 'x'
-        }
-        x = store.AttrStore(data)
+            return value
 
-        self.assertEqual(x.foo, 1)
-        self.assertEqual(x.bar.odd, 'x')
+        rd = store.Store({'int': 'x'})
 
-        x.bar.odd = 'a'
-        self.assertEqual(x.bar.odd, 'a')
+        with self.assertRaises(TypeError):
+            rd.set_validator(validator)
+
+
+# class TestAttrStore(unittest.TestCase):
+#     def test_simple(self):
+#         data = {
+#             'foo': 1,
+#             'bar.odd': 'x'
+#         }
+#         x = store.AttrStore(data)
+
+#         self.assertEqual(x.foo, 1)
+#         self.assertEqual(x.bar.odd, 'x')
+
+#         x.bar.odd = 'a'
+#         self.assertEqual(x.bar.odd, 'a')
 
 
 class TestConfigLoader(unittest.TestCase):
