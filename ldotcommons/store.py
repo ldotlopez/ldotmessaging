@@ -108,6 +108,9 @@ class Store(dict):
         parts = key.split('.')
         return ('.'.join(parts[0:i+1]) for i in range(len(parts)-1))
 
+    def has_namespace(self, namespace):
+        return namespace in self._namespaces
+
     def set_validator(self, func, ns=None, recheck=True):
         if ns in self._validators:
             raise Exception('Validator conflict')
@@ -165,6 +168,7 @@ class Store(dict):
             children = list(self.children(key, fullpath=True))
             for child in children:
                 del(self[child])
+            self._namespaces.remove(key)
         else:
             super().__delitem__(key)
 
