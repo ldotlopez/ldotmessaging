@@ -93,6 +93,33 @@ class TestStore(unittest.TestCase):
             rd['x.y.foo']
         self.assertEqual(e.exception.args[0], 'x.y.foo')
 
+    def test_tree(self):
+        rd = store.Store({
+            'a': 1,
+            'b.aa': 2,
+            'b.bb': 3,
+            'c.aa.aaa': 4,
+            'c.aa.bbb': 5,
+            'c.aa.ccc': 6,
+        })
+
+        self.assertEqual(rd.get_tree('b'), {
+            'aa': 2,
+            'bb': 3,
+        })
+        self.assertEqual(rd.get_tree('c'), {
+            'aa': {
+                'aaa': 4,
+                'bbb': 5,
+                'ccc': 6
+            }
+        })
+        self.assertEqual(rd.get_tree('c.aa'), {
+            'aaa': 4,
+            'bbb': 5,
+            'ccc': 6
+        })
+
     def test_builtin_validator(self):
         type_table = {
             'a': int,

@@ -1,3 +1,4 @@
+import itertools
 from glob import fnmatch
 
 _undef = object()
@@ -145,12 +146,19 @@ class Store(dict):
 
         super().__setitem__(key, value)
 
-    def __getitem__(self, key):
-        if key in self._namespaces:
-            return {k[len(key)+1:]: self.get(k) for k in self.children(key)}
+    def get_tree(self, namespace):
+        if namespace not in self._namespaces:
+            raise KeyError(namespace)
 
-        else:
-            return super().__getitem__(key)
+        r = {}
+        idx = len(namespace) + 1
+        for subkey in self.children(namespace, fullpath=True):
+            if subkey in self._namespaces:
+                r[subkey[idx:]] = self.get_tree(subkey)
+            else:
+                r[subkey[idx:]] = self.get(subkey)
+
+        return r
 
     def __delitem__(self, key):
         if key in self._namespaces:
@@ -162,7 +170,7 @@ class Store(dict):
 
     def children(self, key, fullpath=False):
         s = key + '.'
-        r = (k for k in self)
+        r = itertools.chain((k for k in self), self._namespaces)
 
         # Filter children…
         r = filter(lambda k: k.startswith(s), r)
