@@ -169,7 +169,7 @@ class Store(dict):
             for child in children:
                 del(self[child])
             self._namespaces.remove(key)
-        else:
+        elif key in self:
             super().__delitem__(key)
 
     def children(self, key, fullpath=False):
