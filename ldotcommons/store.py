@@ -3,10 +3,10 @@ from glob import fnmatch
 
 _undef = object()
 _str_booleans = (
-    '0', '1',
-    'yes', 'no',
-    'y', 'n',
-    'true', 'false'
+    '0', '0',
+    'no', 'yes',
+    'n', 'y',
+    'false', 'true'
 )
 
 
