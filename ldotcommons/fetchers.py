@@ -1,7 +1,6 @@
 import gzip
 import io
 from os import path
-import re
 import socket
 from urllib import request, error as urllib_error
 
@@ -23,12 +22,12 @@ class MockFetcher(BaseFetcher):
         self._basedir = basedir
 
     def fetch(self, url, **opts):
-        url = re.subn('[^a-z0-9-_\.]', '_', url)[0]
+        url = utils.slugify(url)
 
         e = None
         f = path.join(self._basedir, url)
         try:
-            fh = f.open()
+            fh = open(f)
             buff = fh.read()
             fh.close()
 
@@ -44,14 +43,20 @@ class MockFetcher(BaseFetcher):
 class UrllibFetcher(BaseFetcher):
     def __init__(self, headers={}, cache=False, cache_delta=-1, logger=None):
         if not logger:
-            logger = logging.get_logger('ldotcommons.fetchers.urllibfetcher')
+            logger = logging.get_logger('ldotcommons.fetchers')
+
         self._logger = logger.getChild('urllibfetcher')
 
         if cache:
-            cache_path = utils.user_path('cache', 'urllibfetcher', create=True, is_folder=True)
+            cache_path = utils.user_path('cache', 'urllibfetcher',
+                                         create=True, is_folder=True)
+
             self._cache = DiskCache(basedir=cache_path, delta=cache_delta,
                                     logger=self._logger.getChild('diskcache'))
-            self._logger.debug('UrllibFetcher using cache {}'.format(cache_path))
+
+            msg = 'UrllibFetcher using cache {path}'
+            msg = msg.format(path=cache_path)
+            self._logger.debug(msg)
         else:
             self._cache = NullCache()
 
