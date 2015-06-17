@@ -3,7 +3,7 @@ from glob import fnmatch
 
 _undef = object()
 _str_booleans = (
-    '0', '0',
+    '0', '1',
     'no', 'yes',
     'n', 'y',
     'false', 'true'
