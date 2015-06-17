@@ -9,13 +9,16 @@ import random
 from ldotcommons import fetchers, logging, utils
 
 
-class UrllibMock(unittest.TestCase):
-    def test_fetch(self):
-        url = 'http://google.co.uk/'
+class TestFactory(unittest.TestCase):
+    def test_factory(self):
+        d = [
+            ('mock', fetchers.MockFetcher),
+            ('urllib', fetchers.UrllibFetcher)
+        ]
 
-        fetcher = fetchers.UrllibFetcher(cache=False)
-        buff = fetcher.fetch(url).decode('iso-8859-1')
-        self.assertTrue(buff.index('<') >= 0)
+        for (name, cls) in d:
+            f = fetchers.Fetcher(name)
+            self.assertTrue(isinstance(f, cls))
 
 
 class TestMock(unittest.TestCase):
@@ -34,6 +37,17 @@ class TestMock(unittest.TestCase):
         buff = fetcher.fetch(url)
 
         self.assertEqual(buff, randstr)
+
+
+class TestUrllib(unittest.TestCase):
+    def test_fetch(self):
+        url = 'http://google.co.uk/'
+
+        fetcher = fetchers.UrllibFetcher(cache=False)
+        buff = fetcher.fetch(url).decode('iso-8859-1')
+        self.assertTrue(buff.index('<') >= 0)
+
+
 
 if __name__ == '__main__':
     logging.set_level(0)

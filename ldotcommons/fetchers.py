@@ -2,6 +2,7 @@ import gzip
 import io
 from os import path
 import socket
+import sys
 from urllib import request, error as urllib_error
 
 from . import logging, utils
@@ -12,16 +13,29 @@ class FetchError(Exception):
     pass
 
 
+class Fetcher:
+    def __new__(cls, fetcher_name, *args, **kwargs):
+        clsname = fetcher_name.replace('-', ' ').replace('_', ' ').capitalize()
+        clsname = clsname + 'Fetcher'
+
+        mod = sys.modules[__name__]
+        cls = getattr(mod, clsname)
+        return cls(*args, **kwargs)
+
+
 class BaseFetcher(object):
     def fetch(self, url, **opts):
         raise NotImplemented('Method not implemented')
 
 
 class MockFetcher(BaseFetcher):
-    def __init__(self, basedir):
+    def __init__(self, basedir=None):
         self._basedir = basedir
 
     def fetch(self, url, **opts):
+        if not self._basedir:
+            raise FetchError("MockFetcher basedir is not configured")
+
         url = utils.slugify(url)
 
         e = None
