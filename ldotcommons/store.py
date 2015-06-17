@@ -136,10 +136,6 @@ class Store(dict):
         if not isinstance(key, str) or key == '':
             raise TypeError(key)
 
-        # Namespaces can't be overwritten
-        if key in self._namespaces:
-            raise TypeError(key)
-
         validator = self.find_validator(key)
         if validator:
             value = validator(key, value)
@@ -169,7 +165,8 @@ class Store(dict):
             for child in children:
                 del(self[child])
             self._namespaces.remove(key)
-        elif key in self:
+
+        if key in self:
             super().__delitem__(key)
 
     def children(self, key, fullpath=False):
@@ -206,109 +203,3 @@ class Store(dict):
     def load_arguments(self, args):
         for (k, v) in vars(args).items():
             self.set(k, v)
-
-    # def _recheck(self, ns=None):
-    #     def _sub_stores():
-    #         return [ns + '.' + k if ns else k for k in self if isinstance(k, Store)]
-
-    #     def _sub
-
-    #     root = self if not ns else self.get(ns, Store({}))
-
-    #     sub_stores = []
-    #     sub_keys = []
-    #     for (k, v) in root.items():
-    #         (sub_stores if isinstance(v, Store) else sub_keys).append(k)
-
-    #     # Deep recheck
-    #     for k in sub_keys:
-    #         root.set(k, root.get(k))
-
-    #     for k in sub_stores:
-    #         self._recheck
-    #     # Wait, must we recheck everything in under ns?
-    #     # if not recheck:
-    #     #     return
-
-    #     # root = self if ns is None else self.get(ns, Store({}))
-    #     # self._rebuild(root)
-
-    # def __setitem__(self, key, value):
-    #     if not isinstance(key, str):
-    #         raise TypeError()
-
-    #     store = super(Store, self)
-
-    #     # Validate value
-    #     parts = key.split('.')
-    #     nss = ['.'.join(parts[0:i+1]) for i in range(len(parts)-1)]
-    #     for ns in reversed([None] + nss):
-    #         if ns in self._validators:
-    #             value = self._validators[ns](key, value)
-    #             break
-
-    #     if '.' not in key:
-    #         store.__setitem__(key, value)
-
-    #     else:
-    #         key, subkey = key.split('.', 1)
-
-    #         if key not in self:
-    #             store.__setitem__(key, Store({subkey: value}))
-
-    #         else:
-    #             store.__getitem__(key).__setitem__(subkey, value)
-
-    # def __getitem__(self, key):
-    #     store = super(Store, self)
-
-    #     if '.' not in key:
-    #         return store.__getitem__(key)
-
-    #     else:
-    #         key, subkey = key.split('.', 1)
-    #         substore = store.__getitem__(key)
-
-    #         try:
-    #             return substore.__getitem__(subkey)
-    #         except KeyError as e:
-    #             raise KeyError(key + '.' + e.args[0])
-
-    # def __delitem__(self, key):
-    #     store = super(Store, self)
-
-    #     if '.' not in key:
-    #         store.__delitem__(key)
-
-    #     else:
-    #         key, subkey = key.split('.', 1)
-    #         store.__getitem__(key).__delitem__(subkey)
-
-    # def __contains__(self, key):
-    #     store = super(Store, self)
-
-    #     if '.' not in key:
-    #         return store.__contains__(key)
-
-    #     else:
-    #         key, subkey = key.split('.', 1)
-    #         try:
-    #             return store.__getitem__(key).__contains__(subkey)
-    #         except KeyError:
-    #             return False
-
-
-class AttrStore(Store):
-    def __setitem__(self, key, value):
-        if '.' not in key:
-            setattr(self, key, value)
-        else:
-            key, subkey = key.split('.', 1)
-            setattr(self, key, AttrStore({subkey: value}))
-
-    def __getattr__(self, attr):
-        s = super(AttrStore, self)
-        if s.__contains__(attr):
-            return s.__getitem__(attr)
-        else:
-            return s.__getattr__(attr)

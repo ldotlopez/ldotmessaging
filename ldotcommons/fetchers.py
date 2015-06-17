@@ -25,7 +25,7 @@ class Fetcher:
 
 class BaseFetcher(object):
     def fetch(self, url, **opts):
-        raise NotImplemented('Method not implemented')
+        raise NotImplementedError('Method not implemented')
 
 
 class MockFetcher(BaseFetcher):
@@ -47,11 +47,10 @@ class MockFetcher(BaseFetcher):
 
             return buff
 
-        except IOError as e_:
-            e = e_.args
-
-        e = (e[0], e[1], "'{}'".format(f))
-        raise FetchError(*e)
+        except IOError as e:
+            msg = "{msg} '{path}' (errno {code})"
+            msg = msg.format(msg=e.args[1], code=e.args[0], path=f)
+            raise FetchError(msg) from e
 
 
 class UrllibFetcher(BaseFetcher):

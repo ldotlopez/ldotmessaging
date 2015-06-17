@@ -215,20 +215,34 @@ class TestStore(unittest.TestCase):
         with self.assertRaises(TypeError):
             rd.set_validator(validator)
 
+    def test_namespaces_can_be_keys_too(self):
+        d = {
+            'foo': 'x',
+            'foo.x.a': 1,
+            'foo.x.b': 2
+        }
+        s = store.Store(d)
+        s.set('foo', 'y')
+        s.set('foo.x.a', 3)
 
-# class TestAttrStore(unittest.TestCase):
-#     def test_simple(self):
-#         data = {
-#             'foo': 1,
-#             'bar.odd': 'x'
-#         }
-#         x = store.AttrStore(data)
+        self.assertEqual(s.get('foo'), 'y')
+        self.assertEqual(s.get_tree('foo'), {
+            'x': {
+                'a': 3,
+                'b': 2
+            }
+        })
 
-#         self.assertEqual(x.foo, 1)
-#         self.assertEqual(x.bar.odd, 'x')
+        s.delete('foo')
 
-#         x.bar.odd = 'a'
-#         self.assertEqual(x.bar.odd, 'a')
+        with self.assertRaises(KeyError):
+            s.get('foo')
+
+        with self.assertRaises(KeyError):
+            s.get_tree('foo.x.a')
+
+        with self.assertRaises(KeyError):
+            s.get_tree('foo')
 
 
 class TestConfigLoader(unittest.TestCase):
