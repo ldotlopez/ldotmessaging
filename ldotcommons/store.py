@@ -3,10 +3,10 @@ from glob import fnmatch
 
 _undef = object()
 _str_booleans = (
-    '0', '1',
-    'yes', 'no',
-    'y', 'n',
-    'true', 'false'
+    '0', '0',
+    'no', 'yes',
+    'n', 'y',
+    'false', 'true'
 )
 
 
@@ -169,7 +169,7 @@ class Store(dict):
             for child in children:
                 del(self[child])
             self._namespaces.remove(key)
-        else:
+        elif key in self:
             super().__delitem__(key)
 
     def children(self, key, fullpath=False):
