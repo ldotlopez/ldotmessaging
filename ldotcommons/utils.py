@@ -310,6 +310,11 @@ def prog_config_file(prog=None):
     return user_path('config') + '.ini'
 
 
+def slugify(s, max_len=0, allowed_chars=r'a-zA-Z0-9\-\.'):
+    s = re.sub(r'[^' + allowed_chars + r']', '-', s)
+    return s[:max_len] if max_len > 0 else s
+
+
 def user_path(typ, name=None, prog=None, create=False, is_folder=None):
     m = {
         'config': appdirs.user_config_dir,
