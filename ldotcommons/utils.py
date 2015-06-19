@@ -411,31 +411,32 @@ def breakpoint():
     get_debugger().set_trace()
 
 
-def parse_interval(string):
+def parse_time(string):
     _table = {
-        's': 1,
-        'm': 60,
-        'h': 60*60,
+        'S': 1,
+        'M': 60,
+        'H': 60*60,
         'd': 60*60*24,
         'w': 60*60*24*7,
-        'M': 60*60*24*30,
-        'Y': 60*60*24*365
+        'm': 60*60*24*30,
+        'y': 60*60*24*365,
     }
-    m = re.match(r'^(?P<amount>\d+)(?P<modifier>[smhdwMY])?$', string)
+    m = re.match(r'^(?P<amount>\d+)\s*(?P<modifier>[SMHdwmy])?$', string)
     if not m:
         raise ValueError(string)
 
     amount = int(m.group('amount'))
-    multiplier = _table.get(m.group('modifier') or 's')
+    multiplier = _table.get(m.group('modifier') or 'S')
     return amount*multiplier
 
 
 def parse_size(string):
+    suffixes = ['k', 'm', 'g', 't', 'p', 'e', 'z', 'y']
     _table = {key: 1000 ** (idx + 1)
-              for (idx, key) in enumerate(['k', 'm', 'g', 't'])}
+              for (idx, key) in enumerate(suffixes)}
 
     string = string.replace(',', '.')
-    m = re.search(r'^([0-9\.]+)([kmgt]b?)?$', string.lower())
+    m = re.search(r'^([0-9\.]+)\s*([kmgtphezy]b?)?$', string.lower())
     if not m:
         raise ValueError()
 
@@ -453,30 +454,30 @@ def parse_size(string):
     return value
 
 
-def get_symbol(symbol_str):
-    parts = symbol_str.split('.')
+# def get_symbol(symbol_str):
+#     parts = symbol_str.split('.')
 
-    module = '.'.join(parts[:-1])
-    function = parts[-1]
+#     module = '.'.join(parts[:-1])
+#     function = parts[-1]
 
-    m = None
-    try:
-        m = importlib.import_module(module)
-    except ImportError:
-        pass
+#     m = None
+#     try:
+#         m = importlib.import_module(module)
+#     except ImportError:
+#         pass
 
-    if not m:
-        raise Exception(
-            "Unable to import module '{}' for '{}'".format(module, symbol_str))
+#     if not m:
+#         raise Exception(
+#             "Unable to import module '{}' for '{}'".format(module, symbol_str))
 
-    try:
-        return getattr(m, function)
-    except AttributeError:
-        pass
+#     try:
+#         return getattr(m, function)
+#     except AttributeError:
+#         pass
 
-    # Try direct import
-    try:
-        return importlib.import_module(symbol_str)
-    except ImportError:
-        raise Exception(
-            "Unable to locate symbol '{}' for '{}'".format(symbol_str, module))
+#     # Try direct import
+#     try:
+#         return importlib.import_module(symbol_str)
+#     except ImportError:
+#         raise Exception(
+#             "Unable to locate symbol '{}' for '{}'".format(symbol_str, module))
