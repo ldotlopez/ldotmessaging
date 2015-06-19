@@ -7,6 +7,7 @@ import re
 import sys
 import time
 import urllib.parse
+import warnings
 
 import appdirs
 
@@ -358,7 +359,13 @@ def shortify(s, length=50):
 
 
 def utcnow_timestamp():
-    return int(time.mktime(datetime.datetime.utcnow().timetuple()))
+    warnings.warn('Use ldotcommons.utils.now_timestamp(utc=True)')
+    return now_timestamp(utc=True)
+
+
+def now_timestamp(utc=False):
+    dt = datetime.datetime.utcnow() if utc else datetime.datetime.now()
+    return int(time.mktime(dt.timetuple()))
 
 
 def configparser_to_dict(cp):
