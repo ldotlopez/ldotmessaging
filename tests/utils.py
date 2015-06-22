@@ -1,5 +1,41 @@
 import unittest
-from ldotcommons.utils import parse_size, parse_time
+from ldotcommons.utils import (
+    InmutableDict,
+    parse_size,
+    parse_time
+)
+
+
+class TestInmutableDict(unittest.TestCase):
+    def test_assing(self):
+        x = InmutableDict()
+        with self.assertRaises(TypeError):
+            x['a'] = 1
+
+    def test_kwinit(self):
+        x = InmutableDict(a=1)
+        self.assertEqual(x['a'], 1)
+
+    def test_pop(self):
+        x = InmutableDict(a=1)
+        with self.assertRaises(TypeError):
+            x.pop('a')
+
+    def test_clear(self):
+        x = InmutableDict(a=1)
+        with self.assertRaises(TypeError):
+            x.clear()
+
+    def test_subclass(self):
+        class X(InmutableDict):
+            def __init__(self, **kwargs):
+                kwargs = {str(k) + str(k): v for (k, v) in kwargs.items()}
+                super().__init__(**kwargs)
+
+        x = X(foo=1, bar=2)
+        self.assertEqual(x['foofoo'], 1)
+        with self.assertRaises(TypeError):
+            x['foo'] = 3
 
 
 class TestSizeParsing(unittest.TestCase):

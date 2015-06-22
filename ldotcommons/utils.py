@@ -12,6 +12,9 @@ import warnings
 import appdirs
 
 
+NoneType = type(None)
+
+
 class DictAction(argparse.Action):
 
     """
@@ -31,6 +34,42 @@ class DictAction(argparse.Action):
         dest[key] = value
 
         setattr(namespace, self.dest, dest)
+
+
+class InmutableDict(dict):
+    _msg = "'InmutableDict' object does not support opertion"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._ = True
+
+    def pop(self, key):
+        if getattr(self, '_', False):
+            raise TypeError(self._msg)
+
+        super().pop(key)
+
+    def drop(self, *keys):
+        return InmutableDict({k: v for (k, v) in self.items()
+                              if k not in keys})
+
+    def clear(self):
+        if getattr(self, '_', False):
+            raise TypeError(self._msg)
+
+        super().clear()
+
+    def __setitem__(self, key, value):
+        if getattr(self, '_', False):
+            raise TypeError(self._msg)
+
+        super().__setitem__(key, value)
+
+    def __delitem__(self, key):
+        if getattr(self, '_', False):
+            raise TypeError(self._msg)
+
+        super().__delitem__(key)
 
 
 class MultiDepthDict(dict):
