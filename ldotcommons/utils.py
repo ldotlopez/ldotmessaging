@@ -37,7 +37,7 @@ class DictAction(argparse.Action):
 
 
 class InmutableDict(dict):
-    _msg = "'InmutableDict' object does not support opertion"
+    _msg = "'InmutableDict' object does not support operation"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -49,7 +49,7 @@ class InmutableDict(dict):
 
         super().pop(key)
 
-    def drop(self, *keys):
+    def exclude(self, *keys):
         return InmutableDict({k: v for (k, v) in self.items()
                               if k not in keys})
 
