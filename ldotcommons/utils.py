@@ -83,7 +83,7 @@ class MultiDepthDict(dict):
 
 
 class SingletonMetaclass(type):
-    def __call__(cls, *args, **kwargs):
+    def __call__(cls, *args, **kwargs):  # nopep8
         instance = getattr(cls, '_instance', None)
         if not instance:
             setattr(cls,
@@ -375,7 +375,8 @@ def user_path(typ, name=None, prog=None, create=False, is_folder=None):
     if name is not None:
         # Fix name for OSX
         if appdirs.system == 'darwin':
-            name = os.path.sep.join([x.capitalize() for x in name.split(os.path.sep)])
+            name = os.path.sep.join([x.capitalize()
+                                    for x in name.split(os.path.sep)])
         ret = os.path.join(m[typ](prog), name)
 
     if create:
@@ -432,24 +433,6 @@ def ini_dump(d, path):
     fh.close()
 
 
-def get_debugger():
-    debugger = None
-
-    for m in ['ipdb', 'pdb']:
-        try:
-            mod = importlib.import_module(m)
-            return mod
-        except ImportError:
-            pass
-
-    if debugger is None:
-        raise Exception('No debugger available')
-
-
-def breakpoint():
-    get_debugger().set_trace()
-
-
 def parse_time(string):
     _table = {
         'S': 1,
@@ -493,30 +476,28 @@ def parse_size(string):
     return value
 
 
-# def get_symbol(symbol_str):
-#     parts = symbol_str.split('.')
+def _import(obj):
+    mod = __import__(obj)
+    for o in obj.split('.')[1:]:
+        mod = getattr(mod, o)
+    return mod
 
-#     module = '.'.join(parts[:-1])
-#     function = parts[-1]
 
-#     m = None
-#     try:
-#         m = importlib.import_module(module)
-#     except ImportError:
-#         pass
+def word_split(s):
+    ret = []
+    idx = 0
+    protected = False
 
-#     if not m:
-#         raise Exception(
-#             "Unable to import module '{}' for '{}'".format(module, symbol_str))
+    for c in s:
+        # Setup element
+        if len(ret) <= idx:
+            ret.insert(idx, '')
 
-#     try:
-#         return getattr(m, function)
-#     except AttributeError:
-#         pass
+        if c in ('\'', '"'):
+            protected = not protected
+            continue
 
-#     # Try direct import
-#     try:
-#         return importlib.import_module(symbol_str)
-#     except ImportError:
-#         raise Exception(
-#             "Unable to locate symbol '{}' for '{}'".format(symbol_str, module))
+        if c == ' ' and not protected:
+            idx += 1
+        else:
+            ret[idx] += c
