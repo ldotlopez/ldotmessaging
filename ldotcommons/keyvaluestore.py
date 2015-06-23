@@ -107,8 +107,18 @@ class _KeyValueItem:
 
 
 class KeyValueManager:
-    def __init__(self, model):
-        self._sess = create_session(engine=model.metadata.bind)
+    def __init__(self, model, session=None):
+        if not session:
+            engine = model.metadata.bind
+            if not engine:
+                msg = ("Model '{model}' is not bind to any engine an session "
+                       "argument is None")
+                msg = msg.format(model=repr(model))
+                raise TypeError(msg)
+
+            session = create_session(engine=model.metadata.bind)
+
+        self._sess = session
         self._model = model
 
     @property
