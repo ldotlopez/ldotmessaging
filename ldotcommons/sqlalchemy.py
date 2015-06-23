@@ -1,6 +1,4 @@
-import json
 import re
-import warnings
 
 import sqlalchemy as sa
 from sqlalchemy import orm, event
@@ -16,11 +14,7 @@ def _re_fn(regexp, other):
     return re.search(regexp, other, re.IGNORECASE) is not None
 
 
-def create_engine(uri='sqlite:///:memory:', echo=False, dburi=None):
-    if dburi:
-        warnings.warn('Usage of dburi is deprecated, use uri instead')
-        uri = dburi
-
+def create_engine(uri='sqlite:///:memory:', echo=False):
     engine = sa.create_engine(uri, echo=echo)
 
     # @property
@@ -49,9 +43,9 @@ def create_engine(uri='sqlite:///:memory:', echo=False, dburi=None):
     return engine
 
 
-def create_session(uri=None, engine=None, echo=False, dburi=None):
+def create_session(uri=None, engine=None, echo=False):
     if not engine:
-        engine = create_engine(uri=uri, echo=echo, dburi=dburi)
+        engine = create_engine(uri=uri, echo=echo)
 
     sess = orm.sessionmaker()
     sess.configure(bind=engine)
