@@ -443,6 +443,12 @@ def parse_time(string):
         'm': 60*60*24*30,
         'y': 60*60*24*365,
     }
+    if isinstance(string, (int)):
+        string = str(string)
+
+    if not isinstance(string, str):
+        raise TypeError(string)
+
     m = re.match(r'^(?P<amount>\d+)\s*(?P<modifier>[SMHdwmy])?$', string)
     if not m:
         raise ValueError(string)
