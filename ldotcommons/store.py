@@ -145,9 +145,12 @@ class Store(dict):
 
         super().__setitem__(key, value)
 
-    def get_tree(self, namespace):
+    def get_tree(self, namespace, default=_undef):
         if namespace not in self._namespaces:
-            raise KeyError(namespace)
+            if default is _undef:
+                raise KeyError(namespace)
+            else:
+                return default
 
         r = {}
         idx = len(namespace) + 1
