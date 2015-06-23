@@ -1,20 +1,29 @@
 #!/usr/bin/python3
 
-import os
-import tempfile
 import unittest
 
-from ldotcommons.keyvaluestore import KeyValueStore
+from sqlalchemy.ext import declarative
+from ldotcommons.sqlalchemy import create_session
+from ldotcommons.keyvaluestore import (
+    KeyValueManager,
+    keyvaluemodel,
+    keyvaluemodel_for_session
+    )
 
 
 class TestMisc(unittest.TestCase):
-    def setUp(self):
-        fh, path = tempfile.mkstemp()
-        self.path = path
-        self.store = KeyValueStore(path)
+    def setUp(self):  # nopep8
+        self.sess = create_session('sqlite:///:memory:')
 
-    def tearDown(self):
-        os.unlink(self.path)
+        # Recreate Base for each test, this is not necessary in a real world
+        # app
+        Base = declarative.declarative_base()  # nopep8
+        Base.metadata.bind = self.sess.get_bind()
+
+        self.model = keyvaluemodel('KV', Base)
+        self.store = KeyValueManager(self.model)
+
+        Base.metadata.create_all()
 
     def test_basics(self):
         tests = [

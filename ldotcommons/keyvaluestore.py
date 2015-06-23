@@ -1,16 +1,39 @@
-from ldotcommons.sqlalchemy import Base, create_session
+from ldotcommons.sqlalchemy import create_session, declarative
 from sqlalchemy import Column, String
 import json
 import pickle
-from os import path
 from sqlalchemy.orm import exc
 
 _UNDEF = object()
 
 
-class KeyValueItem(Base):
-    __tablename__ = 'item'
+def keyvaluemodel_for_session(name, session, tablename=None):
+    base = declarative.declarative_base()
+    base.metadata.bind = session.get_bind()
 
+    return keyvaluemodel(name, base, tablename)
+
+
+def keyvaluemodel(name, base, tablename=None):
+    if not (isinstance(name, str) and name != ''):
+        raise TypeError('name must be a non-empty str')
+
+    if not ((isinstance(tablename, str) and tablename != '') or
+            (tablename is None)):
+        raise TypeError('tablename must be a non-empty str')
+
+    if tablename is None:
+        tablename = name.lower()
+
+    newcls = type(
+        name,
+        (_KeyValueItem, base),
+        dict(__tablename__=tablename))
+
+    return newcls
+
+
+class _KeyValueItem:
     key = Column(String, name='key', primary_key=True,
                  unique=True, nullable=False)
     _value = Column(String, name='value')
@@ -83,16 +106,18 @@ class KeyValueItem(Base):
         raise ValueError((typ, value))
 
 
-class KeyValueStore:
-    def __init__(self, session, separator='.'):
-        KeyValueItem.metadata.bind = session.get_bind()
-        KeyValueItem.metadata.create_all()
-        self._sess = session
-        self._query = self._sess.query(KeyValueItem)
+class KeyValueManager:
+    def __init__(self, model):
+        self._sess = create_session(engine=model.metadata.bind)
+        self._model = model
+
+    @property
+    def _query(self):
+        return self._sess.query(self._model)
 
     def get(self, k, default=_UNDEF):
         try:
-            item = self._query.filter(KeyValueItem.key == k).one()
+            item = self._query.filter(self._model.key == k).one()
         except exc.NoResultFound:
             if default is _UNDEF:
                 raise KeyError(k)
@@ -103,17 +128,17 @@ class KeyValueStore:
 
     def set(self, k, v):
         try:
-            item = self._query.filter(KeyValueItem.key == k).one()
+            item = self._query.filter(self._model.key == k).one()
             item.value = v
         except exc.NoResultFound:
-            item = KeyValueItem(key=k, value=v)
+            item = self._model(key=k, value=v)
             self._sess.add(item)
 
         self._sess.commit()
 
     def reset(self, k):
         try:
-            item = self.query.filter(KeyValueItem.key == k).one()
+            item = self._query.filter(self._model.key == k).one()
         except KeyError:
             pass
 
@@ -123,16 +148,4 @@ class KeyValueStore:
     def children(self, k):
         return map(
             lambda x: x.key,
-            self.query.filter(KeyValueItem.key.startswith(k+".")))
-
-
-class KeyValueStorePath(KeyValueStore):
-    def __init__(self, store_path, *args, **kwargs):
-        sess = create_session('sqlite:///'+path.realpath(store_path))
-        super(KeyValueStorePath, self).__init__(session=sess, **kwargs)
-
-
-class KeyValueMemory(KeyValueStore):
-    def __init__(self, separator='.'):
-        sess = create_session('sqlite:///:memory:')
-        super(KeyValueMemory, self).__init__(sess, separator=separator)
+            self._query.filter(self._model.key.startswith(k+".")))
