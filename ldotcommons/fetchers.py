@@ -56,16 +56,16 @@ class MockFetcher(BaseFetcher):
 class UrllibFetcher(BaseFetcher):
     def __init__(self, headers={}, cache=False, cache_delta=-1, logger=None):
         if not logger:
-            logger = logging.get_logger('ldotcommons.fetchers')
+            logger = logging.get_logger('ldotcommons.fetchers.urllibfetcher')
 
-        self._logger = logger.getChild('urllibfetcher')
+        self._logger = logger
 
         if cache:
             cache_path = utils.user_path('cache', 'urllibfetcher',
                                          create=True, is_folder=True)
 
             self._cache = DiskCache(basedir=cache_path, delta=cache_delta,
-                                    logger=self._logger.getChild('diskcache'))
+                                    logger=self._logger.getChild('cache'))
 
             msg = 'UrllibFetcher using cache {path}'
             msg = msg.format(path=cache_path)
