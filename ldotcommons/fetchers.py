@@ -29,7 +29,7 @@ class BaseFetcher(object):
 
 
 class MockFetcher(BaseFetcher):
-    def __init__(self, basedir=None):
+    def __init__(self, basedir=None, **opts):
         self._basedir = basedir
 
     def fetch(self, url, **opts):
