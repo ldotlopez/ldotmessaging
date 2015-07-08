@@ -105,6 +105,12 @@ class _KeyValueItem:
 
         raise ValueError((typ, value))
 
+    def __repr__(self):
+        return "<{classname} {key}={value}>".format(
+            classname=self.__class__.__name__,
+            key=self.key,
+            value=self.value)
+
 
 class KeyValueManager:
     def __init__(self, model, session=None):
