@@ -1,5 +1,5 @@
 from ldotcommons.sqlalchemy import create_session, declarative
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, Integer
 import json
 import pickle
 from sqlalchemy.orm import exc
@@ -14,28 +14,26 @@ def keyvaluemodel_for_session(name, session, tablename=None):
     return keyvaluemodel(name, base, tablename)
 
 
-def keyvaluemodel(name, base, tablename=None):
+def keyvaluemodel(name, base, extra_dict={}):
     if not (isinstance(name, str) and name != ''):
         raise TypeError('name must be a non-empty str')
 
-    if not ((isinstance(tablename, str) and tablename != '') or
-            (tablename is None)):
-        raise TypeError('tablename must be a non-empty str')
-
-    if tablename is None:
-        tablename = name.lower()
+    class_dict = {
+        '__tablename__': name.lower()
+    }
+    class_dict.update(extra_dict)
 
     newcls = type(
         name,
         (_KeyValueItem, base),
-        dict(__tablename__=tablename))
+        class_dict)
 
     return newcls
 
 
 class _KeyValueItem:
-    key = Column(String, name='key', primary_key=True,
-                 unique=True, nullable=False)
+    id = Column(Integer, primary_key=True)
+    key = Column(String, name='key', nullable=False)
     _value = Column(String, name='value')
     _typ = Column(String(), name='type', default='str', nullable=False)
 
