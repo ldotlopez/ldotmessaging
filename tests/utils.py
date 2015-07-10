@@ -2,7 +2,8 @@ import unittest
 from ldotcommons.utils import (
     InmutableDict,
     parse_size,
-    parse_time
+    parse_time,
+    parse_date
 )
 
 
@@ -136,6 +137,18 @@ class TestTimeParsing(unittest.TestCase):
             parse_time('1Y')
         with self.assertRaises(ValueError):
             parse_time('1 Y')
+
+
+class DateParsingTest(unittest.TestCase):
+    def test_yyyyymmdd(self):
+        tests = [
+            ('1969-07-20 12:34', -14214360),
+            ('2015/04/01', 1427839200),
+            ('2015 12', 1448924400),
+        ]
+        for (s, i) in tests:
+            self.assertEqual(parse_date(s), i, s)
+
 
 if __name__ == '__main__':
     unittest.main()

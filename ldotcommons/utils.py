@@ -482,6 +482,29 @@ def parse_size(string):
     return value
 
 
+def parse_date(string):
+    _table = [
+        (r'^\d{4}.\d{2}.\d{2}.\d{2}.\d{2}', '%Y %m %d %H %M'),
+        (r'^\d{4}.\d{2}.\d{2}$', '%Y %m %d'),
+        (r'^\d{4}.\d{2}$', '%Y %m')
+    ]
+
+    if isinstance(string, int):
+        return string
+
+    string = re.sub(r'[:\.\-\s/]', ' ', string)
+
+    ret = None
+    for (regexp, fmt) in _table:
+        if not re.search(regexp, string):
+            continue
+
+        dt = datetime.datetime.strptime(string, fmt)
+        return int(time.mktime(dt.timetuple()))
+
+    raise ValueError(string)
+
+
 def _import(obj):
     mod = __import__(obj)
     for o in obj.split('.')[1:]:
