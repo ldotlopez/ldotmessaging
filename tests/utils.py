@@ -2,7 +2,7 @@ import unittest
 from ldotcommons.utils import (
     InmutableDict,
     parse_size,
-    parse_time,
+    parse_interval,
     parse_date
 )
 
@@ -78,65 +78,65 @@ class TestSizeParsing(unittest.TestCase):
 
 class TestTimeParsing(unittest.TestCase):
     def test_simple(self):
-        self.assertEqual(parse_time('1'), 1)
-        self.assertNotEqual(parse_time('2'), 1)
+        self.assertEqual(parse_interval('1'), 1)
+        self.assertNotEqual(parse_interval('2'), 1)
 
     def test_invalid_values(self):
         with self.assertRaises(ValueError):
-            parse_time('1.1')
+            parse_interval('1.1')
 
         with self.assertRaises(ValueError):
-            parse_time('1,1')
+            parse_interval('1,1')
 
         with self.assertRaises(ValueError):
-            parse_time('x')
+            parse_interval('x')
 
         with self.assertRaises(ValueError):
-            parse_time('18Z')
+            parse_interval('18Z')
 
         with self.assertRaises(ValueError):
-            parse_time('1h 18m')
+            parse_interval('1h 18m')
 
     def test_suffixes(self):
         # Seconds
-        self.assertEqual(parse_time('1S'), 1)
-        self.assertEqual(parse_time('2   S'), 2)  # multiple spaces here ;)
+        self.assertEqual(parse_interval('1S'), 1)
+        self.assertEqual(parse_interval('2   S'), 2)  # multiple spaces here ;)
         with self.assertRaises(ValueError):
-            parse_time('1s')
+            parse_interval('1s')
         with self.assertRaises(ValueError):
-            parse_time('1 s')
+            parse_interval('1 s')
 
         # Minutes
-        self.assertEqual(parse_time('3M'), 3*60)
-        self.assertEqual(parse_time('4 M'), 4*60)
+        self.assertEqual(parse_interval('3M'), 3*60)
+        self.assertEqual(parse_interval('4 M'), 4*60)
 
         # Hours
-        self.assertEqual(parse_time('5H'), 5*60*60)
-        self.assertEqual(parse_time('6    H'), 6*60*60)
+        self.assertEqual(parse_interval('5H'), 5*60*60)
+        self.assertEqual(parse_interval('6    H'), 6*60*60)
         with self.assertRaises(ValueError):
-            parse_time('7 h')
+            parse_interval('7 h')
         with self.assertRaises(ValueError):
-            parse_time('8h')
+            parse_interval('8h')
 
         # days
-        self.assertEqual(parse_time('8d'), 8*60*60*24)
-        self.assertEqual(parse_time('2  d'), 2*60*60*24)
+        self.assertEqual(parse_interval('8d'), 8*60*60*24)
+        self.assertEqual(parse_interval('2  d'), 2*60*60*24)
         with self.assertRaises(ValueError):
-            parse_time('1D')
+            parse_interval('1D')
         with self.assertRaises(ValueError):
-            parse_time('1 D')
+            parse_interval('1 D')
 
         # months
-        self.assertEqual(parse_time('3m'), 3*60*60*24*30)
-        self.assertEqual(parse_time('4 m'), 4*60*60*24*30)
+        self.assertEqual(parse_interval('3m'), 3*60*60*24*30)
+        self.assertEqual(parse_interval('4 m'), 4*60*60*24*30)
 
         # years
-        self.assertEqual(parse_time('8y'), 8*60*60*24*365)
-        self.assertEqual(parse_time('2  y'), 2*60*60*24*365)
+        self.assertEqual(parse_interval('8y'), 8*60*60*24*365)
+        self.assertEqual(parse_interval('2  y'), 2*60*60*24*365)
         with self.assertRaises(ValueError):
-            parse_time('1Y')
+            parse_interval('1Y')
         with self.assertRaises(ValueError):
-            parse_time('1 Y')
+            parse_interval('1 Y')
 
 
 class DateParsingTest(unittest.TestCase):

@@ -433,7 +433,7 @@ def ini_dump(d, path):
     fh.close()
 
 
-def parse_time(string):
+def parse_interval(string):
     _table = {
         'S': 1,
         'M': 60,
