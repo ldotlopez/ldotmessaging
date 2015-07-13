@@ -21,11 +21,12 @@ class Twitter(twapi.Twitter, messaging.Notifier):
         try:
             self.statuses.update(status=msg)
         except twapi.TwitterHTTPError as e:
-            response = json.loads(e.response_data.decode('utf-8'))
-            for error in response['errors']:
+            for error in e.response_data['errors']:
                 _logger.error('Error {code}: {message}'.format(
                     code=error['code'],
                     message=error['message']))
+
+            raise messaging.NotifierError(e.response_data['errors'])
 
     def recv(self, user_name=None, since=None):
         pass

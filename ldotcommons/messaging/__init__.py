@@ -14,6 +14,10 @@ class Source:
         raise NotImplementedError()
 
 
+class NotifierError(Exception):
+    pass
+
+
 def enable(name, backend, *args, **kwargs):
     if name in _notifiers:
         return
