@@ -1,4 +1,3 @@
 appdirs
-
-# sqlalchemy_helpers
-sqlalchemy
+twitter
+-e git+https://github.com/ldotlopez/ldotcommons.git@strip-messaging#egg=ldotcommons

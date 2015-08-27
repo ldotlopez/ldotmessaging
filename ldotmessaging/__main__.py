@@ -87,7 +87,7 @@ if __name__ == '__main__':
     # Do nasty things to load backend and call init/send without errors
     #
     backend_mod = importlib.import_module(
-        'ldotcommons.messaging.'+opts.backend)
+        'ldotmessaging.'+opts.backend)
     backend_cls_name = ''.join(
         [x.capitalize() for x in opts.backend.split('_')])
     backend_cls = getattr(backend_mod, backend_cls_name)
