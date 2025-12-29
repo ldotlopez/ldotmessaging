@@ -199,26 +199,6 @@ mypy src/
 pytest
 ```
 
-## Migration from Old Version
-
-The modernized version includes several improvements:
-
-1. **Type hints**: Full type annotations for better IDE support
-2. **Modern imports**: Uses `from __future__ import annotations` where appropriate
-3. **Better error handling**: More specific exceptions and error messages
-4. **Configuration**: Migrated from `setup.py` to `pyproject.toml`
-5. **Context managers**: Used for resource management (IMAP, HTTP)
-6. **Pathlib**: Uses `Path` instead of string paths
-7. **F-strings**: Modern string formatting throughout
-8. **Protocol classes**: Uses `typing.Protocol` for better abstraction
-
-### Breaking Changes
-
-- Minimum Python version is now 3.11
-- Package structure moved to `src/` layout
-- Some internal APIs have changed
-- Factory pattern removed in favor of direct imports
-
 ## License
 
 GNU General Public License v2.0 or later (GPLv2+)
