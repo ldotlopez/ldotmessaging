@@ -1,0 +1,93 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ldotmessaging"
+description = "Modern messaging microframework for notifications and message handling"
+version = '0.0.1'
+readme = "README.md"
+requires-python = ">=3.11"
+license-files = ["LICENSE.txt"]
+authors = [
+    {name = "Luis López", email = "ldotlopez@gmail.com"}
+]
+keywords = ["messaging", "notifications", "twitter", "pushover", "email"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Communications",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "appdirs>=1.4.4",
+    "python-twitter>=3.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.1.0",
+    "mypy>=1.7.0",
+    "black>=23.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/ldotlopez/ldotmessaging"
+Repository = "https://github.com/ldotlopez/ldotmessaging"
+Issues = "https://github.com/ldotlopez/ldotmessaging/issues"
+
+[project.scripts]
+ldotmessaging = "ldotmessaging.cli:main"
+
+[tool.setuptools]
+packages = ["ldotmessaging"]
+
+# [tool.setuptools.dynamic]
+# version = { attr = "ldotmessaging.__version__" }
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "--cov=ldotmessaging --cov-report=term-missing"
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.5.1",
+]
